@@ -326,17 +326,17 @@ case ECHO: {
 }</code></pre>
 
         <pre><code># Jupyter (ECHO)
-ble.send_command(CMD.ECHO, "hi mate")
+ble.send_command(CMD.ECHO, "Howdy y'all")
 s = ble.receive_string(ble.uuid["RX_STRING"])
 print(s)</code></pre>
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 1 Jupyter output" />
+            <img src="./1.2.png" alt="Task 1 Jupyter output" />
             <div class="caption">Figure: Jupyter output showing echoed string returned over BLE.</div>
           </div>
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 1 serial output" />
+            <img src="./1.1.png" alt="Task 1 serial output" />
             <div class="caption">Figure: Artemis serial output showing the received payload.</div>
           </div>
         </div>
