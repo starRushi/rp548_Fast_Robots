@@ -381,12 +381,8 @@ ble.send_command(CMD.SEND_THREE_FLOATS, "3.1|23.9|1.1")</code></pre>
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 2 serial output" />
+            <img src="./2.1.png" alt="Task 2 serial output" />
             <div class="caption">Figure: Artemis serial output confirming correct float extraction order.</div>
-          </div>
-          <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 2 Jupyter output" />
-            <div class="caption">Figure: Jupyter cell used to transmit the three-float command.</div>
           </div>
         </div>
       </div>
@@ -421,11 +417,11 @@ print(s)</code></pre>
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 3 Jupyter output" />
+            <img src="./3.2.png" alt="Task 3 Jupyter output" />
             <div class="caption">Figure: Timestamp string received in Jupyter from the RX_STRING notify characteristic.</div>
           </div>
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 3 serial output" />
+            <img src="./3.1.png" alt="Task 3 serial output" />
             <div class="caption">Figure: Artemis serial output showing the same timestamp being generated.</div>
           </div>
         </div>
@@ -449,12 +445,8 @@ ble.start_notify(ble.uuid["RX_STRING"], handler)  # run once per kernel session<
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 4 Jupyter output" />
+            <img src="./4.png" alt="Task 4 Jupyter output" />
             <div class="caption">Figure: Handler output printing parsed millisecond values.</div>
-          </div>
-          <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 4 serial output" />
-            <div class="caption">Figure: Artemis serial output during notification testing.</div>
           </div>
         </div>
       </div>
@@ -505,12 +497,8 @@ ble.send_command(CMD.MESSAGE_SPEED, "")</code></pre>
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 5 serial output" />
+            <img src="./5.png" alt="Task 5 serial output" />
             <div class="caption">Figure: Artemis serial output reporting average messages per second over the 10 second window.</div>
-          </div>
-          <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 5 Jupyter output" />
-            <div class="caption">Figure: Jupyter run used to open RX_FLOAT notifications and trigger the speed test.</div>
           </div>
         </div>
 
@@ -605,11 +593,11 @@ ble.send_command(CMD.SEND_TIME_DATA, "")</code></pre>
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 6 Jupyter output" />
+            <img src="./6.2.png" alt="Task 6 Jupyter output" />
             <div class="caption">Figure: Jupyter output showing the final count of timestamps received.</div>
           </div>
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 6 serial output" />
+            <img src="./6.1.png" alt="Task 6 serial output" />
             <div class="caption">Figure: Artemis serial output confirming buffer fill count during recording.</div>
           </div>
         </div>
@@ -668,11 +656,11 @@ ble.send_command(CMD.GET_TEMP_READINGS, "")</code></pre>
 
         <div class="grid">
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 7 Jupyter output" />
+            <img src="./7.2.png]" alt="Task 7 Jupyter output" />
             <div class="caption">Figure: Jupyter output showing paired timestamp and temperature parsing.</div>
           </div>
           <div class="figure">
-            <img src="[put-image-path-here]" alt="Task 7 serial output" />
+            <img src="./7.1.png" alt="Task 7 serial output" />
             <div class="caption">Figure: Artemis serial output confirming the temperature dataset was transmitted.</div>
           </div>
         </div>
