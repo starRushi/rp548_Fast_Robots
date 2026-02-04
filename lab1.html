@@ -92,6 +92,22 @@
       body{ font-size: 17px; }
       .wrap{ padding: 36px 18px 60px; }
     }
+    .video-container{
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border:1px solid var(--rule);
+      background:#fff;
+      margin: 12px 0;
+    }
+    .video-container iframe{
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+
   </style>
 </head>
 
@@ -253,176 +269,449 @@ characteristics:
   RX_FLOAT: '27616294-3063-4ecc-b60b-3470ddef2938'
   RX_STRING: 'f235a225-6735-4d73-94cb-ee5dfce9ba83'</code></pre>
 
-
-      <div class="task">
-        <h3>Task 1: ECHO command</h3>
-        <p class="small">State what you sent, what you received, and where it appeared (Jupyter output). Include one screenshot.</p>
+      <div class="grid">
         <div class="figure">
-          <img src="[put-image-path-here]" alt="ECHO output in Jupyter" />
-          <div class="caption">Figure 2. ECHO round-trip: laptop → Artemis → laptop.</div>
+          <img src="[put-image-path-here]" alt="connections.yaml excerpt" />
+          <div class="caption">Figure: YAML configuration used by the Python BLE client.</div>
         </div>
-        <pre><code>// Snippet: handler case or Python call (keep it short)
-// [fill]</code></pre>
-      </div>
-
-      <div class="task">
-        <h3>Task 2: SEND_THREE_FLOATS</h3>
-        <p class="small">Show the command call and the Artemis-side extraction/printing evidence.</p>
         <div class="figure">
-          <img src="[put-image-path-here]" alt="Three floats received on Artemis" />
-          <div class="caption">Figure 3. Artemis receives three floats and prints them to Serial Monitor.</div>
+          <img src="[put-image-path-here]" alt="Arduino serial monitor showing advertising and MAC" />
+          <div class="caption">Figure: Artemis serial output confirming BLE advertising and MAC address.</div>
         </div>
       </div>
 
-      <div class="task">
-        <h3>Task 3: GET_TIME_MILLIS command</h3>
-        <p class="small">Show that the Artemis responds with a time string (e.g., T:123456) over the string notify channel.</p>
-        <div class="figure">
-          <img src="[put-image-path-here]" alt="GET_TIME_MILLIS output" />
-          <div class="caption">Figure 4. GET_TIME_MILLIS response received over BLE string notifications.</div>
-        </div>
-      </div>
+      <h3>Codebase: BLE architecture and how commands flow</h3>
+      <p>
+        The BLE codebase is split into an Arduino peripheral and a Python central. On the Artemis, a BLE service is advertised with multiple characteristics.
+        The laptop connects to that service, writes commands to a writable string characteristic, and subscribes to notify-enabled characteristics to receive replies.
+        Commands are encoded as a single string with a numeric command type followed by optional values separated by delimiters. On the Artemis, the RobotCommand
+        class tokenizes the received string to extract the command type and values. Replies are sent back either as a string (for structured text like timestamps)
+        or as a float (for numerical telemetry), using notify so the laptop receives data asynchronously without polling.
+      </p>
+
+      <pre><code># Jupyter setup (minimal)
+%load_ext autoreload
+%autoreload 2
+
+from ble import get_ble_controller
+from cmd_types import CMD
+import time
+
+ble = get_ble_controller()
+ble.connect()</code></pre>
 
       <div class="task">
-        <h3>Task 4: Notification handler parses time</h3>
-        <p class="small">Include the minimal Python handler and evidence that it extracts the integer time values correctly.</p>
-        <pre><code># Python (minimal)
-# [fill: handler and start_notify call]</code></pre>
-      </div>
-
-      <div class="task">
-        <h3>Task 5: Live streaming throughput measurement</h3>
+        <h3>Task 1: ECHO command round-trip</h3>
         <p class="small">
-          Describe the measurement method: a fixed-duration window, count messages, compute messages per second. Report your measured rate.
+          The laptop sends an ECHO command with a payload string. The Artemis extracts the payload and writes it back on the notify string characteristic.
         </p>
 
+        <pre><code>// Arduino (ECHO)
+case ECHO: {
+
+    char char_arr[MAX_MSG_SIZE];
+
+    success = robot_cmd.get_next_value(char_arr);
+    if (!success)
+        return;
+
+    Serial.print("ECHO: ");
+    Serial.print(char_arr);
+
+    tx_estring_value.clear();
+    tx_estring_value.append(char_arr);
+    tx_characteristic_string.writeValue(tx_estring_value.c_str());
+
+    break;
+}</code></pre>
+
+        <pre><code># Jupyter (ECHO)
+ble.send_command(CMD.ECHO, "hi mate")
+s = ble.receive_string(ble.uuid["RX_STRING"])
+print(s)</code></pre>
+
         <div class="grid">
-          <div class="kv">
-            <b>Window length</b>
-            <div class="small">[fill: e.g., 10 s]</div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 1 Jupyter output" />
+            <div class="caption">Figure: Jupyter output showing echoed string returned over BLE.</div>
           </div>
-          <div class="kv">
-            <b>Measured throughput</b>
-            <div class="small">[fill: e.g., XX messages per second]</div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 1 serial output" />
+            <div class="caption">Figure: Artemis serial output showing the received payload.</div>
           </div>
         </div>
-
-        <div class="figure">
-          <img src="[put-image-path-here]" alt="Task 5 result" />
-          <div class="caption">Figure 5. Task 5: throughput result (Serial Monitor or Jupyter output).</div>
-        </div>
-
-        <pre><code>// Arduino (short snippet)
-// [fill: MESSAGE_SPEED core logic only]</code></pre>
       </div>
 
       <div class="task">
-        <h3>Task 6: Buffered timestamps and SEND_TIME_DATA</h3>
+        <h3>Task 2: SEND_THREE_FLOATS parsing on Artemis</h3>
         <p class="small">
-          Explain: timestamps are recorded locally into a fixed-size global array, then transmitted after recording completes. Include: buffer length, sample count, and confirmation that Python received all points.
+          The laptop sends three floats separated by <code>|</code>. The Artemis extracts three floats and verifies correct parsing via serial output.
         </p>
 
+        <pre><code>// Arduino (SEND_THREE_FLOATS)
+case SEND_THREE_FLOATS: {
+
+    float fl_a, fl_b, fl_c;
+
+    success = robot_cmd.get_next_value(fl_a);
+    if (!success)
+        return;
+
+    success = robot_cmd.get_next_value(fl_b);
+    if (!success)
+        return;
+
+    success = robot_cmd.get_next_value(fl_c);
+    if (!success)
+        return;
+
+    Serial.print("Three Floats: ");
+    Serial.print(fl_a);
+    Serial.print(", ");
+    Serial.print(fl_b);
+    Serial.print(", ");
+    Serial.print(fl_c);
+    Serial.print(", ");
+
+    break;
+}</code></pre>
+
+        <pre><code># Jupyter (SEND_THREE_FLOATS)
+ble.send_command(CMD.SEND_THREE_FLOATS, "3.1|23.9|1.1")</code></pre>
+
         <div class="grid">
-          <div class="kv">
-            <b>Buffer length</b>
-            <div class="small">TIME_BUF_LEN = [fill]</div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 2 serial output" />
+            <div class="caption">Figure: Artemis serial output confirming correct float extraction order.</div>
           </div>
-          <div class="kv">
-            <b>Samples recorded and received</b>
-            <div class="small">Recorded: [fill] · Received: [fill]</div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 2 Jupyter output" />
+            <div class="caption">Figure: Jupyter cell used to transmit the three-float command.</div>
           </div>
         </div>
-
-        <div class="figure">
-          <img src="[put-image-path-here]" alt="Task 6 results" />
-          <div class="caption">Figure 6. Task 6: buffered timestamps transmitted and verified in Python.</div>
-        </div>
-
-        <pre><code>// Arduino (short snippet)
-// [fill: RECORD_TIME_DATA write to array + SEND_TIME_DATA loop + DONE marker]</code></pre>
-
-        <pre><code># Python (short snippet)
-# [fill: parse "T:" into time_list and confirm count]</code></pre>
       </div>
 
       <div class="task">
-        <h3>Task 7: Buffered time + temperature and GET_TEMP_READINGS</h3>
+        <h3>Task 3: GET_TIME_MILLIS returns a timestamp string</h3>
         <p class="small">
-          Explain: a second array stores temperature aligned by index with the timestamp array; GET_TEMP_READINGS streams paired values as one record per notification. Include evidence that list lengths match and show a plot.
+          The Artemis replies to GET_TIME_MILLIS with a string containing the current millisecond counter.
         </p>
 
+        <pre><code>// Arduino (GET_TIME_MILLIS)
+case GET_TIME_MILLIS: {
+
+    int TIME;
+    TIME = millis();
+
+    Serial.print("T:");
+    Serial.println(millis());
+
+    tx_estring_value.clear();
+    tx_estring_value.append("T:");
+    tx_estring_value.append(TIME);
+    tx_characteristic_string.writeValue(tx_estring_value.c_str());
+
+    break;
+}</code></pre>
+
+        <pre><code># Jupyter (GET_TIME_MILLIS)
+ble.send_command(CMD.GET_TIME_MILLIS, "")
+s = ble.receive_string(ble.uuid["RX_STRING"])
+print(s)</code></pre>
+
         <div class="grid">
-          <div class="kv">
-            <b>Data format</b>
-            <div class="small"><code>T:&lt;ms&gt;|C:&lt;degC&gt;</code></div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 3 Jupyter output" />
+            <div class="caption">Figure: Timestamp string received in Jupyter from the RX_STRING notify characteristic.</div>
           </div>
-          <div class="kv">
-            <b>Samples received</b>
-            <div class="small">time_list: [fill] · temp_list: [fill]</div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 3 serial output" />
+            <div class="caption">Figure: Artemis serial output showing the same timestamp being generated.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Task 4: Notification handler parses time values</h3>
+        <p class="small">
+          A notification callback was registered on the string characteristic. Each notification is decoded and the millisecond field is extracted.
+        </p>
+
+        <pre><code># Jupyter (notification handler for RX_STRING)
+def parse_t(s):
+    return int(s.split(":", 1)[1])
+
+def handler(uuid, notif):
+    s = ble.bytearray_to_string(notif).strip()
+    print(parse_t(s))
+
+ble.start_notify(ble.uuid["RX_STRING"], handler)  # run once per kernel session</code></pre>
+
+        <div class="grid">
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 4 Jupyter output" />
+            <div class="caption">Figure: Handler output printing parsed millisecond values.</div>
+          </div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 4 serial output" />
+            <div class="caption">Figure: Artemis serial output during notification testing.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Task 5: Message throughput measurement</h3>
+        <p class="small">
+          The Artemis repeatedly writes a float notification for a fixed window, counts the number of writes, and reports the average rate in messages per second.
+        </p>
+
+        <pre><code>// Arduino (MESSAGE_SPEED)
+case MESSAGE_SPEED: {
+
+    speed_test_active = true;
+
+    unsigned long start_ms = millis();
+    unsigned long now_ms = start_ms;
+
+    int count = 0;
+
+    while ((now_ms - start_ms) &lt; 10000) {
+        now_ms = millis();
+
+        tx_characteristic_float.writeValue(1.0f);
+
+        count++;
+
+        delay(1);
+    }
+
+    float rate = count / 10.0f;
+
+    Serial.print("Messages Per Second are ");
+    Serial.println(rate);
+    Serial.print("every second, averaged over 10 seconds.");
+
+    speed_test_active = false;
+
+    break;
+}</code></pre>
+
+        <pre><code># Jupyter (trigger MESSAGE_SPEED)
+def float_handler(uuid, notif):
+    pass
+
+ble.start_notify(ble.uuid["RX_FLOAT"], float_handler)
+ble.send_command(CMD.MESSAGE_SPEED, "")</code></pre>
+
+        <div class="grid">
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 5 serial output" />
+            <div class="caption">Figure: Artemis serial output reporting average messages per second over the 10 second window.</div>
+          </div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 5 Jupyter output" />
+            <div class="caption">Figure: Jupyter run used to open RX_FLOAT notifications and trigger the speed test.</div>
           </div>
         </div>
 
-        <div class="figure">
-          <img src="[put-image-path-here]" alt="Task 7 paired data in Jupyter" />
-          <div class="caption">Figure 7. Task 7: paired timestamp and temperature readings received over BLE.</div>
+        <div class="callout">
+          <b>Effective data transfer rate</b>
+          <div class="small">
+            Measured notification rate: <code>[fill: msgs/sec]</code><br>
+            Float payload rate (payload only): <code>(msgs/sec) × 4 bytes</code> = <code>[fill: bytes/sec]</code><br>
+            Note: BLE overhead is nonzero and is not included in payload-only throughput.
+          </div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Task 6: Buffered timestamp array and SEND_TIME_DATA</h3>
+        <p class="small">
+          Instead of streaming each timestamp immediately, timestamps are stored into a global fixed-size buffer during a recording window.
+          After recording, SEND_TIME_DATA transmits each stored timestamp as a string to the laptop.
+        </p>
+
+        <pre><code>// Arduino globals (buffers)
+const int TIME_BUF_LEN = 2000;
+
+unsigned long time_buf[TIME_BUF_LEN];
+int time_buf_count = 0;
+
+float temp_buf[TIME_BUF_LEN];</code></pre>
+
+        <pre><code>// Arduino (RECORD_TIME_DATA)
+case RECORD_TIME_DATA: {
+
+    time_buf_count = 0;
+
+    unsigned long start_ms = millis();
+    unsigned long now_ms = start_ms;
+
+    while ((now_ms - start_ms) &lt; 10000) {
+        now_ms = millis();
+
+        if (time_buf_count &gt;= TIME_BUF_LEN) {
+            break;
+        }
+
+        time_buf[time_buf_count] = now_ms;
+
+        float tC = getTempDegC();
+        temp_buf[time_buf_count] = tC;
+
+        time_buf_count++;
+
+        delay(1);
+    }
+
+    Serial.print("RECORDED ");
+    Serial.print(time_buf_count);
+    Serial.println(" (time,temp) samples");
+
+    break;
+}</code></pre>
+
+        <pre><code>// Arduino (SEND_TIME_DATA)
+case SEND_TIME_DATA: {
+
+    for (int i = 0; i &lt; time_buf_count; i++) {
+        tx_estring_value.clear();
+        tx_estring_value.append("T:");
+        tx_estring_value.append((int)time_buf[i]);
+        tx_characteristic_string.writeValue(tx_estring_value.c_str());
+        delay(2);
+    }
+
+    tx_characteristic_string.writeValue("Jupyter ping task 6 done");
+
+    break;
+}</code></pre>
+
+        <pre><code># Jupyter (Task 6 receive)
+time_list = []
+
+def time_handler(uuid, notif):
+    s = ble.bytearray_to_string(notif).strip()
+    if s.startswith("T:"):
+        time_list.append(int(s.split(":", 1)[1]))
+    else:
+        print(s, "received:", len(time_list))
+
+ble.start_notify(ble.uuid["RX_STRING"], time_handler)
+
+time_list.clear()
+ble.send_command(CMD.RECORD_TIME_DATA, "")
+ble.send_command(CMD.SEND_TIME_DATA, "")</code></pre>
+
+        <div class="grid">
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 6 Jupyter output" />
+            <div class="caption">Figure: Jupyter output showing the final count of timestamps received.</div>
+          </div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 6 serial output" />
+            <div class="caption">Figure: Artemis serial output confirming buffer fill count during recording.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Task 7: Buffered temperature readings paired with timestamps</h3>
+        <p class="small">
+          A second buffer stores temperature values at the same indices as the timestamp buffer. GET_TEMP_READINGS transmits paired records formatted as
+          <code>T:&lt;ms&gt;|C:&lt;degC&gt;</code>. The laptop parses the pairs into two lists.
+        </p>
+
+        <pre><code>// Arduino (GET_TEMP_READINGS)
+case GET_TEMP_READINGS: {
+
+    for (int i = 0; i &lt; time_buf_count; i++) {
+
+        tx_estring_value.clear();
+        tx_estring_value.append("T:");
+        tx_estring_value.append((int)time_buf[i]);
+        tx_estring_value.append("|C:");
+        tx_estring_value.append(temp_buf[i]);
+
+        tx_characteristic_string.writeValue(tx_estring_value.c_str());
+        delay(2);
+    }
+
+    tx_characteristic_string.writeValue("DONE");
+    Serial.println("SENT TEMP READINGS");
+
+    break;
+}</code></pre>
+
+        <pre><code># Jupyter (Task 7 receive)
+time_list = []
+temp_list = []
+
+def temp_handler(uuid, notif):
+    s = ble.bytearray_to_string(notif).strip()
+    if s == "DONE":
+        print("DONE", len(time_list), len(temp_list))
+        return
+    if s.startswith("T:") and "|C:" in s:
+        left, right = s.split("|C:", 1)
+        t = int(left.split(":", 1)[1])
+        c = float(right)
+        time_list.append(t)
+        temp_list.append(c)
+
+ble.start_notify(ble.uuid["RX_STRING"], temp_handler)
+
+time_list.clear()
+temp_list.clear()
+ble.send_command(CMD.RECORD_TIME_DATA, "")
+ble.send_command(CMD.GET_TEMP_READINGS, "")</code></pre>
+
+        <div class="grid">
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 7 Jupyter output" />
+            <div class="caption">Figure: Jupyter output showing paired timestamp and temperature parsing.</div>
+          </div>
+          <div class="figure">
+            <img src="[put-image-path-here]" alt="Task 7 serial output" />
+            <div class="caption">Figure: Artemis serial output confirming the temperature dataset was transmitted.</div>
+          </div>
         </div>
 
         <div class="figure">
           <img src="[put-image-path-here]" alt="Temperature vs time plot" />
-          <div class="caption">Figure 8. Temperature vs time from buffered acquisition.</div>
+          <div class="caption">Figure: Temperature plotted versus time using the parsed lists.</div>
         </div>
-
-        <pre><code>// Arduino (short snippet)
-// [fill: recording both arrays + GET_TEMP_READINGS transmit loop + DONE]</code></pre>
-
-        <pre><code># Python (short snippet)
-# [fill: parse into time_list/temp_list + plot]</code></pre>
       </div>
-    </section>
 
-    <section>
       <h2>Discussion</h2>
-
       <h3>Live streaming vs buffered acquisition</h3>
-      <p class="small">
-        Replace this with a tight comparison. Include: overhead, reliability, achievable sample rate, and when each method is preferable.
+      <p>
+        Streaming sends each data point immediately as it is sampled, which supports interactive debugging and low latency feedback, but increases BLE traffic and
+        makes performance sensitive to notification overhead and packet loss. Buffered acquisition records samples locally at a steady cadence and transmits later,
+        which reduces real-time BLE load during sampling and can improve reliability, but introduces delay between acquisition and inspection and is constrained by RAM.
       </p>
 
       <div class="callout">
-        <b>Memory estimate (RAM constraint)</b>
-        <p class="small tight">
-          Use this space to compute storage limits. Example structure:
-          <br/>
-          Timestamp array: TIME_BUF_LEN × 4 bytes (if using 32-bit) or × 8 bytes (if using unsigned long on your platform).
-          <br/>
-          Temperature array: TIME_BUF_LEN × 4 bytes.
-          <br/>
-          Total ≈ [fill] kB. Compare to 384 kB RAM and note overhead.
-        </p>
+        <b>Sampling speed and memory estimate</b>
+        <div class="small">
+          Buffered sampling cadence is limited by the loop body and any explicit delays.
+          With <code>delay(1)</code>, the theoretical upper bound is approximately 1000 samples per second, with the actual value dependent on sensor read time and BLE state.<br><br>
+          Memory used by buffers (payload only):<br>
+          <code>time_buf</code>: <code>TIME_BUF_LEN × 4 bytes</code><br>
+          <code>temp_buf</code>: <code>TIME_BUF_LEN × 4 bytes</code><br>
+          Total: <code>TIME_BUF_LEN × 8 bytes</code><br>
+          For <code>TIME_BUF_LEN = 2000</code>, buffer payload is approximately <code>16,000 bytes</code> (about <code>15.6 kB</code>), excluding overhead and other variables, within 384 kB RAM.
+        </div>
       </div>
 
-      <h3>Challenges and fixes</h3>
-      <ul class="small">
-        <li>[fill: e.g., UUID mismatch and resolution]</li>
-        <li>[fill: e.g., start_notify run twice in Jupyter and resolution]</li>
-        <li>[fill: e.g., dropped packets mitigated by delay(2)]</li>
-      </ul>
-    </section>
+      <div class="figure">
+        <img src="[put-image-path-here]" alt="Optional summary screenshot" />
+        <div class="caption">Figure: Optional summary evidence showing final received list sizes and consistency checks.</div>
+      </div>
 
-    <hr />
-
-    <section>
-      <h2>Selected code snippets</h2>
-      <p class="small">
-        Use GitHub Gists for larger snippets and embed links here. Include only the functions relevant to each task.
-      </p>
-      <ul class="small">
-        <li>EString transmit helper gist: <a href="[gist-link]">[fill]</a></li>
-        <li>Python notification handler gist: <a href="[gist-link]">[fill]</a></li>
-        <li>Task 6/7 buffering gist: <a href="[gist-link]">[fill]</a></li>
-      </ul>
     </section>
 
   </div>
 </body>
 </html>
+
