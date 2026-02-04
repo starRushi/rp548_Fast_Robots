@@ -687,7 +687,10 @@ ble.send_command(CMD.GET_TEMP_READINGS, "")</code></pre>
       <h3>Live streaming vs buffered acquisition</h3>
       <p>
         The main difference here is that streaming constantly, meaning an excess of BLE traffic, which had to be dealt with by slowing things down to avoid packet loss. When you wait, however, and do it locally first, you end up with a mcuh more streamlined process. There's two different situations I'd use each in. The first is for when you have a robot that has to react in real time, whereas the second is more for collecting information on something. This is because it is able to sample more within a certain time frame. Say, for example, if you needed to figure out what happened, then it's better in that case. 384kb/4bytes per each of the two (temp & time) yeilds 48,000 of each (96,000 in total).
-       <p>
+      <p>
+      <p>
+      Collaborations: debugging aid from Rajarshi Das in lab, moral support from Clarence Dagins as I fixed this html at 5am, Brooke Hudson and Anunth Ramaswami's webpages since they were my friends (this was mostly useful for realizing why I got an error due to re-running notify) and chatGPT 5.2 to make the html of the site and help diagnose code issues. 
+      <p>
     </section>
 
   </div>
