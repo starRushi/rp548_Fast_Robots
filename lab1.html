@@ -116,7 +116,7 @@
 <!-- You're reading the HTML of a burnt out college student written at 4am so either you have no life, you're my friend from the future, or your the professor checking that I actually did this legit. Hi professor. Yes I did. It was really hard. Your class is super cool though, and your vibes are 10/10 -->
     <header>
       <div class="crumbs">
-        <a href="/">Fast Robots @ Cornell</a> &nbsp;›&nbsp; <span>Lab 1</span>
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 1</span>
       </div>
       <h1>Lab 1: The Artemis Board and Bluetooth</h1>
       <div class="meta">
@@ -686,29 +686,8 @@ ble.send_command(CMD.GET_TEMP_READINGS, "")</code></pre>
       <h2>Discussion</h2>
       <h3>Live streaming vs buffered acquisition</h3>
       <p>
-        Streaming sends each data point immediately as it is sampled, which supports interactive debugging and low latency feedback, but increases BLE traffic and
-        makes performance sensitive to notification overhead and packet loss. Buffered acquisition records samples locally at a steady cadence and transmits later,
-        which reduces real-time BLE load during sampling and can improve reliability, but introduces delay between acquisition and inspection and is constrained by RAM.
-      </p>
-
-      <div class="callout">
-        <b>Sampling speed and memory estimate</b>
-        <div class="small">
-          Buffered sampling cadence is limited by the loop body and any explicit delays.
-          With <code>delay(1)</code>, the theoretical upper bound is approximately 1000 samples per second, with the actual value dependent on sensor read time and BLE state.<br><br>
-          Memory used by buffers (payload only):<br>
-          <code>time_buf</code>: <code>TIME_BUF_LEN × 4 bytes</code><br>
-          <code>temp_buf</code>: <code>TIME_BUF_LEN × 4 bytes</code><br>
-          Total: <code>TIME_BUF_LEN × 8 bytes</code><br>
-          For <code>TIME_BUF_LEN = 2000</code>, buffer payload is approximately <code>16,000 bytes</code> (about <code>15.6 kB</code>), excluding overhead and other variables, within 384 kB RAM.
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="[put-image-path-here]" alt="Optional summary screenshot" />
-        <div class="caption">Figure: Optional summary evidence showing final received list sizes and consistency checks.</div>
-      </div>
-
+        The main difference here is that streaming constantly, meaning an excess of BLE traffic, which had to be dealt with by slowing things down to avoid packet loss. When you wait, however, and do it locally first, you end up with a mcuh more streamlined process. There's two different situations I'd use each in. The first is for when you have a robot that has to react in real time, whereas the second is more for collecting information on something. This is because it is able to sample more within a certain time frame. Say, for example, if you needed to figure out what happened, then it's better in that case. 384kb/4bytes per each of the two (temp & time) yeilds 48,000 of each (96,000 in total).
+       <p>
     </section>
 
   </div>
