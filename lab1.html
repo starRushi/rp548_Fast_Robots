@@ -144,19 +144,16 @@
       <div class="figure">
         <!-- Replace src with your path, e.g. /assets/lab1/mac_serial.png -->
         <img src="[put-image-path-here]" alt="Serial monitor showing MAC address" />
-        <div class="caption">Figure 1. Artemis prints its MAC address after flashing the BLE sketch (115200 baud).</div>
+        <div class="caption">Figure: Artemis prints its MAC address after flashing the BLE sketch (115200 baud).</div>
       </div>
 
     <section>
       <h2>Lab 1a Tasks</h2>
-
-      <div class="task">
+      
         <h3>Task 1: Blink</h3>
       
         <p>
-          The Blink example was compiled and uploaded to verify successful communication
-          between the Arduino IDE and the Artemis board. The onboard LED toggled at the
-          expected interval.
+          The Blink example was used to confirm successful code upload and execution on the Artemis board. The delay was modified to ten seconds between each blink to make the LED state change clearly observable.
         </p>
       
         <div class="video-container">
@@ -170,23 +167,21 @@
         </div>
       
         <p class="caption">
-          Figure: Serial monitor output and LED behavior during Blink execution.
+          Video: Serial monitor output and LED behavior during Blink execution.
         </p>
       </div>
 
       <div class="task">
-        <h3>Task 1: Blink</h3>
+        <h3>Task 2: Serial</h3>
       
         <p>
-          The Blink example was compiled and uploaded to verify successful communication
-          between the Arduino IDE and the Artemis board. The onboard LED toggled at the
-          expected interval.
+          The serial communication example was run to verify bidirectional data transfer between the Artemis board and the computer. Messages sent from the board were observed in the serial monitor at the expected baud rate of 115200.
         </p>
       
         <div class="video-container">
           <iframe
             src="https://www.youtube.com/embed/YOUTUBE_VIDEO_ID"
-            title="Blink Verification"
+            title="Serial Verification"
             frameborder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen>
@@ -194,17 +189,15 @@
         </div>
       
         <p class="caption">
-          Figure: Serial monitor output and LED behavior during Blink execution.
+          Video: Serial monitor output showing connection. 
         </p>
       </div>
 
       <div class="task">
-        <h3>Task 2: Blink</h3>
+        <h3>Task 3: analogRead</h3>
       
         <p>
-          The Blink example was compiled and uploaded to verify successful communication
-          between the Arduino IDE and the Artemis board. The onboard LED toggled at the
-          expected interval.
+          The onboard temperature sensor was tested using the provided analog read example. Temperature readings changed when the chip was touched by hand and when air was blown across the board, confirming that the sensor was responsive.
         </p>
       
         <div class="video-container">
@@ -218,17 +211,15 @@
         </div>
       
         <p class="caption">
-          Figure: Serial monitor output and LED behavior during Blink execution.
+          Video: Serial monitor output while blowing and touching temp sensor.
         </p>
       </div>
 
       <div class="task">
-        <h3>Task 3: Blink</h3>
+        <h3>Task 4: MicrophoneOutput</h3>
       
         <p>
-          The Blink example was compiled and uploaded to verify successful communication
-          between the Arduino IDE and the Artemis board. The onboard LED toggled at the
-          expected interval.
+          The pulse density microphone example was used to test audio input on the Artemis board. Changes in the serial output were observed when whistling near the microphone, indicating successful detection of sound frequency and amplitude.
         </p>
       
         <div class="video-container">
@@ -242,61 +233,10 @@
         </div>
       
         <p class="caption">
-          Figure: Serial monitor output and LED behavior during Blink execution.
-        </p>
-      </div>
-
-      <div class="task">
-        <h3>Task 4: Blink</h3>
-      
-        <p>
-          The Blink example was compiled and uploaded to verify successful communication
-          between the Arduino IDE and the Artemis board. The onboard LED toggled at the
-          expected interval.
-        </p>
-      
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/YOUTUBE_VIDEO_ID"
-            title="Blink Verification"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
-      
-        <p class="caption">
-          Figure: Serial monitor output and LED behavior during Blink execution.
+          Video: Serial monitor output during sound testing.
         </p>
       </div>
       <div class="task">
-        <h3>Task 5: Blink</h3>
-      
-        <p>
-          The Blink example was compiled and uploaded to verify successful communication
-          between the Arduino IDE and the Artemis board. The onboard LED toggled at the
-          expected interval.
-        </p>
-      
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/YOUTUBE_VIDEO_ID"
-            title="Blink Verification"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
-      
-        <p class="caption">
-          Figure: Serial monitor output and LED behavior during Blink execution.
-        </p>
-      </div>
-
-
-
-
-
 
          
     <section>
@@ -305,16 +245,17 @@
       
       <h3>Configurations</h3>
       <p class="small">
-        Document the exact configuration changes you made (connections.yaml and UUIDs). Avoid copying the handout; state what you changed and why.
+        Note that the artemis address had to be temporarily changed when, in lab, a different board was used. 
       </p>
 
-      <pre><code># connections.yaml (redacted if needed)
-artemis_address: '[fill]'
-ble_service: '[fill]'
+      <pre><code># connections.yaml 
+artemis_address: 'c0:81:a4:24:29:64'
+ble_service: '84b22398-9ffc-4b89-aa8f-b9d6956d5dd9'
 characteristics:
-  TX_CMD_STRING: '[fill]'
-  RX_FLOAT: '[fill]'
-  RX_STRING: '[fill]'</code></pre>
+  TX_CMD_STRING: '9750f60b-9c9c-4158-b620-02ec9521cd99'
+  RX_FLOAT: '27616294-3063-4ecc-b60b-3470ddef2938'
+  RX_STRING: 'f235a225-6735-4d73-94cb-ee5dfce9ba83'</code></pre>
+
 
       <div class="task">
         <h3>Task 1: ECHO command</h3>
