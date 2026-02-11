@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lab 1: Artemis Board and Bluetooth</title>
+  <title>Lab 2: IMU</title>
   <style>
     :root{
       --text:#111;
@@ -87,6 +87,8 @@
     }
     .tight{ margin-top: 0; }
     .small{ font-size:16px; color:var(--muted); }
+    .toc a{ color: var(--link); text-decoration:none; }
+    .toc a:hover{ text-decoration:underline; }
     @media (max-width: 760px){
       .grid{ grid-template-columns: 1fr; }
       body{ font-size: 17px; }
@@ -107,7 +109,13 @@
       height:100%;
       border:0;
     }
-
+    .muted-box{
+      border:1px dashed var(--rule);
+      padding: 12px 14px;
+      background:#fff;
+      color: var(--muted);
+      margin: 12px 0;
+    }
   </style>
 </head>
 
@@ -121,54 +129,339 @@
       <div class="meta">
         <span>Board: SparkFun RedBoard Artemis Nano</span> ·
         <span>Interface: USB Serial + BLE</span> ·
-        <span>IMU: Sparkfun 9DOF Sensor</span> ·
+        <span>IMU: SparkFun 9DoF ICM-20948</span>
       </div>
     </header>
 
-    <section>
+    <section id="overview">
       <h2>Overview</h2>
       <p>
-        <span class="small">Over the course of the next week, we added the IMU to our robots and recorded a stunt on our RC robot to observe the effect on our sensors. </span>
+        <span class="small">Fill in a short overview of what you built, what you measured, and what you demonstrated.</span>
       </p>
+
+      <div class="callout toc">
+        <b>Contents</b>
+        <ul class="tight">
+          <li><a href="#setup">Set up the IMU</a></li>
+          <li><a href="#accelerometer">Accelerometer</a></li>
+          <li><a href="#gyroscope">Gyroscope</a></li>
+          <li><a href="#sample-data">Sample Data and BLE Transfer</a></li>
+          <li><a href="#stunt">Record a Stunt</a></li>
+          <li><a href="#code">Code Links</a></li>
+        </ul>
+      </div>
     </section>
 
-    <section>
-      <h2>Lab 2</h2>
+    <section id="setup">
+      <h2>Lab Tasks</h2>
+      <h3>Set up the IMU</h3>
 
-      <h3>Setup the IMU</h3>
-
-      
       <div class="figure">
-        <!-- Replace src with your path, e.g. /assets/lab1/mac_serial.png -->
-        <img src="./IMU_Connection.png" alt="Artemis IMU connections" />
-        <div class="caption">Figure: Physical Artemis IMU connections.</div>
+        <img src="./L2_IMU_Connection.png" alt="Artemis IMU connections" />
+        <div class="caption">Figure: Artemis to IMU wiring using Qwiic connectors.</div>
       </div>
 
       <div class="figure">
-        <!-- Replace src with your path, e.g. /assets/lab1/mac_serial.png -->
-        <img src="./IMU_Exmp.png" alt="Example Code" />
-        <div class="caption">Figure: IMU example code functioning.</div>
+        <img src="./L2_IMU_Exmp.png" alt="SparkFun example output or code working" />
+        <div class="caption">Figure: SparkFun ICM-20948 example running and producing sensor output.</div>
       </div>
-      
+
       <div class="grid">
         <div class="kv">
-          <b>The AD0_VAL Definition</b>
+          <b>AD0_VAL definition</b>
+          <div class="small">Fill in answer for AD0_VAL definition here.</div>
+        </div>
+
+        <div class="kv">
+          <b>Acceleration and gyroscope data discussion</b>
+          <div class="small">Fill in answer for accelerometer and gyroscope discussion here.</div>
+        </div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Accel_Exmp.png" alt="Accelerometer example behavior" />
+        <div class="caption">Figure: Example accelerometer data while rotating, flipping, and accelerating the board.</div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Gyro_Exmp.png" alt="Gyroscope example behavior" />
+        <div class="caption">Figure: Example gyroscope data while rotating, flipping, and accelerating the board.</div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_3_Blinks_Code.png" alt="Startup LED blink code or evidence" />
+        <div class="caption">Figure: Startup running indicator implementation (three slow blinks).</div>
+      </div>
+    </section>
+
+    <section id="accelerometer" class="task">
+      <h3>Accelerometer</h3>
+
+      <div class="kv">
+        <b>Pitch and roll from accelerometer</b>
+        <div class="small">
+          Fill in the equations you used here. If you have an image of equations, link it below.
+        </div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Accel_Equations.png" alt="Accelerometer pitch and roll equations" />
+        <div class="caption">Figure: Pitch and roll equations used for accelerometer conversion.</div>
+      </div>
+
+      <div class="kv">
+        <b>Output at approximately -90, 0, +90 degrees</b>
+        <div class="small">
+          Insert a YouTube link to your demonstration video and summarize what you showed.
+        </div>
+      </div>
+
+      <div class="video-container">
+        <iframe
+          src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE"
+          title="Pitch and roll demonstration"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div class="caption">Video: Pitch and roll output demonstration near -90, 0, +90 degrees.</div>
+
+      <div class="grid">
+        <div class="kv">
+          <b>Accelerometer accuracy</b>
           <div class="small">
-           PUT ANSWER TO WHAT MEANS HERE
+            Fill in answer for accelerometer accuracy discussion here.
+            Mention that you performed a two-point calibration and it was fairly accurate, without listing specific numbers.
           </div>
         </div>
 
-         <div class="kv">
-          <b>Acceleration and Gyroscope Data Discussions</b>
+        <div class="kv">
+          <b>Two-point calibration</b>
           <div class="small">
-           PUT ANSWER TO WHAT MEANS HERE
+            Fill in calibration method summary here, including how you collected the two reference orientations and how you computed offset and scale.
+          </div>
+        </div>
+      </div>
+
+      <div class="kv">
+        <b>Noise in the frequency spectrum</b>
+        <div class="small">
+          Fill in answer for frequency spectrum discussion here. State what data you recorded, what motion you induced, and what you observed.
+        </div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_FFT_Accel.png" alt="FFT of accelerometer signal" />
+        <div class="caption">Figure: Fourier transform magnitude spectrum of accelerometer signal.</div>
+      </div>
+
+      <div class="grid">
+        <div class="kv">
+          <b>Cutoff frequency choice</b>
+          <div class="small">
+            Fill in cutoff frequency reasoning here. Describe how the FFT guided the cutoff selection and the tradeoff between smoothness and lag.
+          </div>
+        </div>
+
+        <div class="kv">
+          <b>Low-pass filter implementation</b>
+          <div class="small">
+            Fill in implementation details here. Include the filter equation and how you computed the parameters from sampling rate and cutoff.
           </div>
         </div>
       </div>
 
       <div class="figure">
-        <!-- Replace src with your path, e.g. /assets/lab1/mac_serial.png -->
-        <img src="./MAC.png" alt="Data Image" />
-        <div class="caption">Figure: [description based on answer ot preve].</div>
+        <img src="./L2_Lowpass_Raw_vs_Filtered.png" alt="Raw versus filtered accelerometer signal" />
+        <div class="caption">Figure: Raw accelerometer-derived signal compared to low-pass filtered output.</div>
       </div>
+
+      <div class="kv">
+        <b>Plotting in Python</b>
+        <div class="small">
+          Fill in a brief description of your Jupyter plotting workflow here. Mention what you plotted on the x-axis and y-axis.
+        </div>
+      </div>
+    </section>
+
+    <section id="gyroscope" class="task">
+      <h3>Gyroscope</h3>
+
+      <div class="kv">
+        <b>Pitch, roll, yaw from gyroscope</b>
+        <div class="small">
+          Fill in documentation for how you computed pitch, roll, and yaw from gyro rates here.
+          Use your attached equations image below.
+        </div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Gyro_Equations.png" alt="Gyroscope angle integration equations" />
+        <div class="caption">Figure: Gyroscope equations used for pitch, roll, and yaw estimation.</div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Gyro_Positions.png" alt="Gyroscope results for different orientations" />
+        <div class="caption">Figure: Gyroscope angle outputs for different board orientations.</div>
+      </div>
+
+      <div class="grid">
+        <div class="kv">
+          <b>Comparison to accelerometer and filtered response</b>
+          <div class="small">
+            Fill in comparison discussion here. Describe differences in drift, noise, and response to vibration.
+          </div>
+        </div>
+
+        <div class="kv">
+          <b>Sampling frequency effects</b>
+          <div class="small">
+            Fill in sampling frequency discussion here. Describe what you changed and what accuracy differences you observed.
+          </div>
+        </div>
+      </div>
+
+      <div class="kv">
+        <b>Complementary filter</b>
+        <div class="small">
+          Fill in complementary filter design choices here, including the blend parameter and why you chose it.
+          Include evidence of working range and stability.
+        </div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Complementary_Filter.png" alt="Complementary filter results" />
+        <div class="caption">Figure: Complementary filter output compared to accelerometer-only and gyroscope-only estimates.</div>
+      </div>
+    </section>
+
+    <section id="sample-data" class="task">
+      <h3>Sample Data and BLE Transfer</h3>
+
+      <div class="grid">
+        <div class="kv">
+          <b>Speed up the main loop</b>
+          <div class="small">
+            Fill in summary of what you removed or changed to increase sampling speed here.
+            Mention removal of delays and reduction of prints.
+          </div>
+        </div>
+
+        <div class="kv">
+          <b>Sampling speed measurement</b>
+          <div class="small">
+            Fill in measured sampling speed here. State your sampling rate and whether the loop ran faster than the IMU update rate.
+          </div>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="kv">
+          <b>Data storage design</b>
+          <div class="small">
+            Fill in justification here for one big array versus separate arrays.
+          </div>
+        </div>
+
+        <div class="kv">
+          <b>Data types and memory</b>
+          <div class="small">
+            Fill in justification here for chosen data types and how many seconds fit in memory.
+          </div>
+        </div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_Timestamped_Arrays.png" alt="Timestamped data arrays evidence" />
+        <div class="caption">Figure: Evidence of time-stamped IMU data stored in arrays.</div>
+      </div>
+
+      <div class="figure">
+        <img src="./L2_BLE_Transfer_5s.png" alt="BLE transfer of 5 seconds of data" />
+        <div class="caption">Figure: Evidence of at least 5 seconds of IMU data sent over Bluetooth to the computer.</div>
+      </div>
+
+      <div class="muted-box">
+        Placeholder for a short snippet of relevant code or a link to a GitHub Gist.
+      </div>
+    </section>
+
+    <section id="stunt" class="task">
+      <h3>Record a Stunt</h3>
+
+      <div class="kv">
+        <b>Baseline driving and observations</b>
+        <div class="small">
+          Insert a YouTube link to your baseline driving video. Fill in discussion of what you observed.
+          Mention that you drove the car in a circle and what you expected the IMU to show.
+        </div>
+      </div>
+
+      <div class="video-container">
+        <iframe
+          src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE"
+          title="RC car baseline driving"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div class="caption">Video: Baseline RC car driving.</div>
+
+      <div class="kv">
+        <b>Stunt video and observations</b>
+        <div class="small">
+          Insert a YouTube link to your stunt video. Fill in discussion of what happened and what the IMU data suggests.
+        </div>
+      </div>
+
+      <div class="video-container">
+        <iframe
+          src="https://www.youtube.com/embed/YOUR_VIDEO_ID_HERE"
+          title="RC car stunt"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div class="caption">Video: Recorded stunt.</div>
+    </section>
+
+    <section id="code" class="task">
+      <h3>Code Links</h3>
+      <p class="small">
+        Include links to short, relevant code excerpts only.
+      </p>
+
+      <div class="grid">
+        <div class="kv">
+          <b>IMU setup and plotting output</b>
+          <div class="small">
+            Link: <a href="YOUR_GIST_OR_REPO_LINK_HERE">YOUR_GIST_OR_REPO_LINK_HERE</a>
+          </div>
+        </div>
+
+        <div class="kv">
+          <b>Filtering and complementary filter</b>
+          <div class="small">
+            Link: <a href="YOUR_GIST_OR_REPO_LINK_HERE">YOUR_GIST_OR_REPO_LINK_HERE</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="kv">
+        <b>Python analysis notebook</b>
+        <div class="small">
+          Link: <a href="YOUR_NOTEBOOK_LINK_HERE">YOUR_NOTEBOOK_LINK_HERE</a>
+        </div>
+      </div>
+    </section>
+
+    <hr />
+    <p class="small">
+      Replace the placeholder image filenames with your actual saved figures if they differ.
+      Current expected image files in this folder: L2_IMU_Connection.png, L2_IMU_Exmp.png, L2_Accel_Exmp.png, L2_Gyro_Exmp.png, L2_3_Blinks_Code.png.
+    </p>
+  </div>
+</body>
+</html>
+
 
