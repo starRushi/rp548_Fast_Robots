@@ -316,169 +316,76 @@ rad = deg * π / 180.0</code></pre>
             Acceleromater accuracy was quite good, as evidenced by the video and double checked by a two point calibration as suggested. 
           </div>
         </div>
-
-      <div class="kv">
-        <b>Noise in the frequency spectrum</b>
-        <div class="small">
-          FREQUENCY STUFF HERE
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_FFT_Accel.png" alt="FFT of accelerometer signal" />
-        <div class="caption">Figure: Fourier transform magnitude spectrum of accelerometer signal.</div>
-      </div>
-
-      <div class="grid">
-        <div class="kv">
-          <b>Cutoff frequency choice</b>
-          <div class="small">
-            CUTOFF FREQ CHOICE (Describe how the FFT guided the cutoff selection and the tradeoff between smoothness & lag.)
-          </div>
-        </div>
-
-        <div class="kv">
-          <b>Low-pass filter implementation</b>
-          <div class="small">
-            LOW PASS FILT (the filter equation that i put above and how i computed the parameters from sampling rate and cutoff.)
-          </div>
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_Lowpass_Raw_vs_Filtered.png" alt="Raw versus filtered accelerometer signal" />
-        <div class="caption">Figure: Raw accelerometer-derived signal compared to low-pass filtered output.</div>
-      </div>
-
-    <section id="gyroscope" class="task">
-      <h3>Gyroscope</h3>
-
-      <div class="kv">
-        <b>Pitch, roll, yaw from gyroscope</b>
-        <div class="small">
-          Fill in documentation for how you computed pitch, roll, and yaw from gyro rates here.
-          Use your attached equations image below.
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_Gyro_Equations.png" alt="Gyroscope angle integration equations" />
-        <div class="caption">Figure: Gyroscope equations used for pitch, roll, and yaw estimation.</div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_Gyro_Positions.png" alt="Gyroscope results for different orientations" />
-        <div class="caption">Figure: Gyroscope angle outputs for different board orientations.</div>
-      </div>
-
-      <div class="grid">
-        <div class="kv">
-          <b>Comparison to accelerometer and filtered response</b>
-          <div class="small">
-            Fill in comparison discussion here. Describe differences in drift, noise, and response to vibration.
-          </div>
-        </div>
-
-        <div class="kv">
-          <b>Sampling frequency effects</b>
-          <div class="small">
-            Fill in sampling frequency discussion here. Describe what you changed and what accuracy differences you observed.
-          </div>
-        </div>
-      </div>
-
-      <div class="kv">
-        <b>Complementary filter</b>
-        <div class="small">
-          Fill in complementary filter design choices here, including the blend parameter and why you chose it.
-          Include evidence of working range and stability.
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_Complementary_Filter.png" alt="Complementary filter results" />
-        <div class="caption">Figure: Complementary filter output compared to accelerometer-only and gyroscope-only estimates.</div>
-      </div>
-    </section>
-
-    <section id="sample-data" class="task">
-      <h3>Sample Data and BLE Transfer</h3>
-
-      <div class="grid">
-        <div class="kv">
-          <b>Speed up the main loop</b>
-          <div class="small">
-            Fill in summary of what you removed or changed to increase sampling speed here.
-            Mention removal of delays and reduction of prints.
-          </div>
-        </div>
-
-        <div class="kv">
-          <b>Sampling speed measurement</b>
-          <div class="small">
-            Fill in measured sampling speed here. State your sampling rate and whether the loop ran faster than the IMU update rate.
-          </div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <div class="kv">
-          <b>Data storage design</b>
-          <div class="small">
-            Fill in justification here for one big array versus separate arrays.
-          </div>
-        </div>
-
-        <div class="kv">
-          <b>Data types and memory</b>
-          <div class="small">
-            Fill in justification here for chosen data types and how many seconds fit in memory.
-          </div>
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_Timestamped_Arrays.png" alt="Timestamped data arrays evidence" />
-        <div class="caption">Figure: Evidence of time-stamped IMU data stored in arrays.</div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_BLE_Transfer_5s.png" alt="BLE transfer of 5 seconds of data" />
-        <div class="caption">Figure: Evidence of at least 5 seconds of IMU data sent over Bluetooth to the computer.</div>
-      </div>
-
-      <div class="muted-box">
-        Placeholder for a short snippet of relevant code or a link to a GitHub Gist.
-      </div>
-    </section>
-
-    <section id="stunt" class="task">
-      <h3>Record a Stunt</h3>
-
-      <div class="kv">
-        <b>Stunt video and observations</b>
-        <div class="small">
-          Insert a YouTube link to your stunt video. Fill in discussion of what happened and what the IMU data suggests.
-        </div>
-      </div>
-
-      <div class="video-container">
-        <iframe
-          src="https://www.youtube.com/embed/mEb4oHepWm4?si=e_XSIH6-rWfg5pxo"
-          title="RC car stunt"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen>
-        </iframe>
-      </div>
-      <div class="caption">Video: Recorded stunt.</div>
-    </section>
-    
-    <hr />
-    <p class="small">
-      Collaborations: Moral support from Clarence Dagins as I fixed this html at 3am (not 5am this time) and Brooke Hudson and Anunth Ramaswami's webpages since they were my friends. Lastly, chatGPT 5.2 to make the html of the site and help diagnose code issues (this was dominated with struggles graphing data because python hates me, personally). 
+        
+    <h2>Noise in the Frequency Spectrum</h2>
+    <p>
+      The accelerometer angle estimates are visibly noisy when the IMU is exposed to vibration, including table vibration and nearby RC car motion. To quantify the noise, I recorded pitch and roll computed from the accelerometer and analyzed the frequency spectrum using a one sided FFT.
     </p>
-  </div>
-</body>
-</html>
-
+    
+    <figure>
+      <img src="assets/img/lab2/accel_time_pitch_roll.png" alt="Accelerometer pitch and roll over time">
+      <figcaption>
+        Accelerometer derived pitch and roll versus time during a vibration heavy interval.
+      </figcaption>
+    </figure>
+    
+    <figure>
+      <img src="assets/img/lab2/accel_fft_pitch_roll.png" alt="FFT of accelerometer pitch and roll">
+      <figcaption>
+        One sided FFT of the accelerometer derived pitch and roll signals. Amplitudes are normalized to the maximum magnitude for each signal.
+      </figcaption>
+    </figure>
+    
+    <h3>Cutoff Frequency Choice</h3>
+    <p>
+      The FFT shows that most of the energy is concentrated at low frequencies associated with true tilt and slow motion, while vibration introduces higher frequency components. A low pass cutoff in the single digit Hz range preserves intentional tilt dynamics while attenuating vibration driven noise.
+    </p>
+    
+    <h2>Accelerometer Low Pass Filter</h2>
+    <p>
+      I implemented a first order IIR low pass filter on the accelerometer pitch and roll angles. This filter reduces high frequency noise while preserving the slow tilt components needed for attitude estimation.
+    </p>
+    
+    <figure>
+      <img src="assets/img/lab2/accel_lpf_overlay_pitch_roll.png" alt="Raw and filtered accelerometer pitch and roll">
+      <figcaption>
+        Raw accelerometer pitch and roll compared against the low pass filtered result.
+      </figcaption>
+    </figure>
+    
+    <h2>Gyroscope</h2>
+    <p>
+      I computed pitch, roll, and yaw by integrating the gyroscope angular velocity measurements over time. The gyroscope captures rapid changes smoothly, but the integrated angles drift over time due to bias and accumulated error. In contrast, accelerometer angles do not drift long term but are sensitive to vibration and linear acceleration.
+    </p>
+    
+    <h2>Complementary Filter</h2>
+    <p>
+      To combine the short term stability of the gyroscope with the long term reference of the accelerometer, I implemented a complementary filter. The filter uses a weighted sum of the integrated gyro angle and the low pass filtered accelerometer angle:
+    </p>
+    
+    <p><code>angle = alpha * (angle + gyro_rate * dt) + (1 - alpha) * accel_angle_filtered</code></p>
+    
+    <p>
+      With alpha close to 1, the estimate follows the gyroscope for fast motion but is continuously corrected toward the accelerometer reference, preventing drift while remaining robust to quick vibration.
+    </p>
+    
+    <figure>
+      <img src="assets/img/lab2/gyro_vs_accel_complementary_pitch_roll.png" alt="Comparison of gyro, accel, and complementary filter pitch and roll">
+      <figcaption>
+        Pitch and roll comparison across raw accelerometer, filtered accelerometer, integrated gyroscope, and complementary filter estimates.
+      </figcaption>
+    </figure>
+    
+    <figure>
+      <img src="assets/img/lab2/gyro_yaw_time.png" alt="Gyroscope yaw over time">
+      <figcaption>
+        Yaw computed from gyroscope integration. Yaw is shown separately because accelerometer tilt equations do not provide a yaw reference.
+      </figcaption>
+    </figure>
+    
+    <h2>Record a Stunt</h2>
+    <p>
+      [Keep your completed stunt section here exactly as you already wrote it.]
+    </p>
+  <html>
 
