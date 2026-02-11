@@ -317,75 +317,56 @@ rad = deg * π / 180.0</code></pre>
           </div>
         </div>
         
-    <h2>Noise in the Frequency Spectrum</h2>
-    <p>
-      The accelerometer angle estimates are visibly noisy when the IMU is exposed to vibration, including table vibration and nearby RC car motion. To quantify the noise, I recorded pitch and roll computed from the accelerometer and analyzed the frequency spectrum using a one sided FFT.
+<h2>Noise in the Frequency Spectrum</h2>
+
+<figure>
+  <img src="assets/img/lab2/accel_time_pitch_roll.png" alt="Accelerometer pitch and roll over time">
+  <figcaption>Accelerometer pitch and roll versus time.</figcaption>
+</figure>
+
+<figure>
+  <img src="assets/img/lab2/accel_fft_pitch_roll.png" alt="FFT of accelerometer pitch and roll">
+  <figcaption>One sided FFT of accelerometer pitch and roll (normalized amplitude).</figcaption>
+</figure>
+
+<h2>Accelerometer Low Pass Filter</h2>
+
+<figure>
+  <img src="assets/img/lab2/accel_lpf_overlay_pitch_roll.png" alt="Raw and filtered accelerometer pitch and roll">
+  <figcaption>Raw accelerometer angles compared to low pass filtered angles.</figcaption>
+</figure>
+
+<h2>Gyroscope</h2>
+
+<figure>
+  <img src="assets/img/lab2/gyro_vs_accel_complementary_pitch_roll.png" alt="Pitch and roll comparison across accel, filtered accel, gyro, and complementary filter">
+  <figcaption>Pitch and roll: raw accel, filtered accel, integrated gyro, complementary filter.</figcaption>
+</figure>
+
+<figure>
+  <img src="assets/img/lab2/gyro_yaw_time.png" alt="Gyroscope yaw over time">
+  <figcaption>Yaw angle from gyroscope integration.</figcaption>
+</figure>
+
+    <section id="stunt" class="task">
+      <h3>Record a Stunt</h3>
+
+      <div class="video-container">
+        <iframe
+          src="https://www.youtube.com/embed/mEb4oHepWm4?si=e_XSIH6-rWfg5pxo"
+          title="RC car stunt"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      <div class="caption">Video: Recorded stunt.</div>
+    </section>
+    
+    <hr />
+    <p class="small">
+      Collaborations: Moral support from Clarence Dagins as I fixed this html at 3am (not 5am this time) and Brooke Hudson and Anunth Ramaswami's webpages since they were my friends. Lastly, chatGPT 5.2 to make the html of the site and help diagnose code issues. 
     </p>
-    
-    <figure>
-      <img src="assets/img/lab2/accel_time_pitch_roll.png" alt="Accelerometer pitch and roll over time">
-      <figcaption>
-        Accelerometer derived pitch and roll versus time during a vibration heavy interval.
-      </figcaption>
-    </figure>
-    
-    <figure>
-      <img src="assets/img/lab2/accel_fft_pitch_roll.png" alt="FFT of accelerometer pitch and roll">
-      <figcaption>
-        One sided FFT of the accelerometer derived pitch and roll signals. Amplitudes are normalized to the maximum magnitude for each signal.
-      </figcaption>
-    </figure>
-    
-    <h3>Cutoff Frequency Choice</h3>
-    <p>
-      The FFT shows that most of the energy is concentrated at low frequencies associated with true tilt and slow motion, while vibration introduces higher frequency components. A low pass cutoff in the single digit Hz range preserves intentional tilt dynamics while attenuating vibration driven noise.
-    </p>
-    
-    <h2>Accelerometer Low Pass Filter</h2>
-    <p>
-      I implemented a first order IIR low pass filter on the accelerometer pitch and roll angles. This filter reduces high frequency noise while preserving the slow tilt components needed for attitude estimation.
-    </p>
-    
-    <figure>
-      <img src="assets/img/lab2/accel_lpf_overlay_pitch_roll.png" alt="Raw and filtered accelerometer pitch and roll">
-      <figcaption>
-        Raw accelerometer pitch and roll compared against the low pass filtered result.
-      </figcaption>
-    </figure>
-    
-    <h2>Gyroscope</h2>
-    <p>
-      I computed pitch, roll, and yaw by integrating the gyroscope angular velocity measurements over time. The gyroscope captures rapid changes smoothly, but the integrated angles drift over time due to bias and accumulated error. In contrast, accelerometer angles do not drift long term but are sensitive to vibration and linear acceleration.
-    </p>
-    
-    <h2>Complementary Filter</h2>
-    <p>
-      To combine the short term stability of the gyroscope with the long term reference of the accelerometer, I implemented a complementary filter. The filter uses a weighted sum of the integrated gyro angle and the low pass filtered accelerometer angle:
-    </p>
-    
-    <p><code>angle = alpha * (angle + gyro_rate * dt) + (1 - alpha) * accel_angle_filtered</code></p>
-    
-    <p>
-      With alpha close to 1, the estimate follows the gyroscope for fast motion but is continuously corrected toward the accelerometer reference, preventing drift while remaining robust to quick vibration.
-    </p>
-    
-    <figure>
-      <img src="assets/img/lab2/gyro_vs_accel_complementary_pitch_roll.png" alt="Comparison of gyro, accel, and complementary filter pitch and roll">
-      <figcaption>
-        Pitch and roll comparison across raw accelerometer, filtered accelerometer, integrated gyroscope, and complementary filter estimates.
-      </figcaption>
-    </figure>
-    
-    <figure>
-      <img src="assets/img/lab2/gyro_yaw_time.png" alt="Gyroscope yaw over time">
-      <figcaption>
-        Yaw computed from gyroscope integration. Yaw is shown separately because accelerometer tilt equations do not provide a yaw reference.
-      </figcaption>
-    </figure>
-    
-    <h2>Record a Stunt</h2>
-    <p>
-      [Keep your completed stunt section here exactly as you already wrote it.]
-    </p>
-  <html>
+  </div>
+</body>
+</html>
 
