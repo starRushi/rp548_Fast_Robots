@@ -296,77 +296,77 @@ rad = deg * π / 180.0</code></pre>
 
   
 </section>
-    <section id="accelerometer" class="task">
-      <h3>Accelerometer</h3>
-
-      <div class="video-container">
-        <iframe
-          src="https://www.youtube.com/embed/CjSTey5EiXA?si=5pBpSjQMv_8yU2pJ"
-          title="Pitch and roll demonstration"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen>
-        </iframe>
-      </div>
-      <div class="caption">Video: Pitch and roll output demonstration near -90, 0, +90 degrees.</div>
-
-      <div class="grid">
-        <div class="kv">
-          <b>Accelerometer accuracy</b>
-          <div class="small">
-            Acceleromater accuracy was quite good, as evidenced by the video and double checked by a two point calibration as suggested. 
-          </div>
+  <section id="accelerometer" class="task">
+    <h3>Accelerometer</h3>
+  
+    <div class="video-container">
+      <iframe
+        src="https://www.youtube.com/embed/CjSTey5EiXA?si=5pBpSjQMv_8yU2pJ"
+        title="Pitch and roll demonstration"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+    <div class="caption">Video: Pitch and roll output demonstration near -90, 0, +90 degrees.</div>
+  
+    <div class="grid">
+      <div class="kv">
+        <b>Accelerometer accuracy</b>
+        <div class="small">
+          Acceleromater accuracy was quite good, as evidenced by the video and double checked by a two point calibration as suggested.
         </div>
-        
-<h2>Noise in the Frequency Spectrum</h2>
-
-<figure>
-  <img src="assets/img/lab2/accel_time_pitch_roll.png" alt="Accelerometer pitch and roll over time">
-  <figcaption>Accelerometer pitch and roll versus time.</figcaption>
-</figure>
-
-<figure>
-  <img src="assets/img/lab2/accel_fft_pitch_roll.png" alt="FFT of accelerometer pitch and roll">
-  <figcaption>One sided FFT of accelerometer pitch and roll (normalized amplitude).</figcaption>
-</figure>
-
-<h2>Accelerometer Low Pass Filter</h2>
-
-<figure>
-  <img src="assets/img/lab2/accel_lpf_overlay_pitch_roll.png" alt="Raw and filtered accelerometer pitch and roll">
-  <figcaption>Raw accelerometer angles compared to low pass filtered angles.</figcaption>
-</figure>
-
-<h2>Gyroscope</h2>
-
-<figure>
-  <img src="assets/img/lab2/gyro_vs_accel_complementary_pitch_roll.png" alt="Pitch and roll comparison across accel, filtered accel, gyro, and complementary filter">
-  <figcaption>Pitch and roll: raw accel, filtered accel, integrated gyro, complementary filter.</figcaption>
-</figure>
-
-<figure>
-  <img src="assets/img/lab2/gyro_yaw_time.png" alt="Gyroscope yaw over time">
-  <figcaption>Yaw angle from gyroscope integration.</figcaption>
-</figure>
-
-    <section id="stunt" class="task">
-      <h3>Record a Stunt</h3>
-
-      <div class="video-container">
-        <iframe
-          src="https://www.youtube.com/embed/mEb4oHepWm4?si=e_XSIH6-rWfg5pxo"
-          title="RC car stunt"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowfullscreen>
-        </iframe>
       </div>
-      <div class="caption">Video: Recorded stunt.</div>
-    </section>
-    
-    <hr />
-    <p class="small">
-      Collaborations: Moral support from Clarence Dagins as I fixed this html at 3am (not 5am this time) and Brooke Hudson and Anunth Ramaswami's webpages since they were my friends. Lastly, chatGPT 5.2 to make the html of the site and help diagnose code issues. 
-    </p>
-  </div>
-</body>
-</html>
+      <div class="kv">
+        <b>Notes</b>
+        <div class="small">
+          The following plots use the same recorded dataset for time domain, FFT, and low pass filtering.
+        </div>
+      </div>
+    </div>
+  
+    <h2>Noise in the Frequency Spectrum</h2>
+  
+    <div class="figure">
+      <img src="./assets/img/lab2/accel_time_pitch_roll.png" alt="Accelerometer pitch and roll over time" />
+      <div class="caption">Accelerometer pitch and roll versus time.</div>
+    </div>
+  
+    <div class="figure">
+      <img src="./assets/img/lab2/accel_fft_pitch_roll.png" alt="FFT of accelerometer pitch and roll" />
+      <div class="caption">One sided FFT of accelerometer pitch and roll (normalized amplitude).</div>
+    </div>
+  
+    <h2>Accelerometer Low Pass Filter</h2>
+  
+    <div class="figure">
+      <img src="./assets/img/lab2/accel_lpf_overlay_pitch_roll.png" alt="Raw and filtered accelerometer pitch and roll" />
+      <div class="caption">Raw accelerometer angles compared to low pass filtered angles.</div>
+    </div>
+  
+    <h2>Gyroscope</h2>
+  
+    <div class="figure">
+      <img src="./assets/img/lab2/gyro_vs_accel_complementary_pitch_roll.png" alt="Pitch and roll comparison across accel, filtered accel, gyro, and complementary filter" />
+      <div class="caption">Pitch and roll: raw accel, filtered accel, integrated gyro, complementary filter.</div>
+    </div>
+  
+    <div class="figure">
+      <img src="./assets/img/lab2/gyro_yaw_time.png" alt="Gyroscope yaw over time" />
+      <div class="caption">Yaw angle from gyroscope integration.</div>
+    </div>
+  </section>
+  
+  <section id="stunt" class="task">
+    <h3>Record a Stunt</h3>
+  
+    <div class="video-container">
+      <iframe
+        src="https://www.youtube.com/embed/mEb4oHepWm4?si=e_XSIH6-rWfg5pxo"
+        title="RC car stunt"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen>
+      </iframe>
+    </div>
+    <div class="caption">Video: Recorded stunt.</div>
+  </section>
 
