@@ -218,7 +218,7 @@ rad = deg * π / 180.0</code></pre>
   <div class="kv">
     <b>Pitch and roll from accelerometer</b>
     <div class="small">
-      Use accelerometer gravity direction to estimate tilt. These forms are robust using \(\operatorname{atan2}\).
+      Use accelerometer gravity direction to estimate tilt. These forms won't break while using \(\operatorname{atan2}\).
     </div>
     <div class="callout">
       \[
@@ -236,15 +236,12 @@ rad = deg * π / 180.0</code></pre>
   <div class="kv">
     <b>Gyroscope angle integration (pitch, roll, yaw)</b>
     <div class="small">
-      Gyroscope gives angular rate. Integrate over time to get angle. This drifts over time due to bias.
+      Gyroscope gives angular rate. Integrate over time to get angle. This drifts over time.
     </div>
     <div class="callout">
       \[
       \theta_g[k] = \theta_g[k-1] + \omega[k]\;dt
       \]
-    </div>
-    <div class="small">
-      Apply per axis (example naming only): roll uses \(\omega_x\), pitch uses \(\omega_y\), yaw uses \(\omega_z\), depending on your axis convention.
     </div>
   </div>
 
@@ -279,7 +276,7 @@ rad = deg * π / 180.0</code></pre>
       \]
     </div>
     <div class="small">
-      \(\beta\) is typically close to 1 (example: 0.95 to 0.99). Use the same structure for roll and pitch.
+      \(\beta\) is typically close to 1 (example: 0.95 to 0.99). Use the same for the other two. 
     </div>
   </div>
 
@@ -297,32 +294,10 @@ rad = deg * π / 180.0</code></pre>
     </div>
   </div>
 
-  <div class="muted-box">
-    Fill in here: axis convention statement (which physical direction is +X, +Y, +Z on your board) and which gyro axis you integrated for pitch and roll.
-  </div>
+  
 </section>
     <section id="accelerometer" class="task">
       <h3>Accelerometer</h3>
-      
-
-      <div class="kv">
-        <b>Pitch and roll from accelerometer</b>
-        <div class="small">
-          Fill in the equations you used here. If you have an image of equations, link it below.
-        </div>
-      </div>
-
-      <div class="figure">
-        <img src="./L2_Accel_Equations.png" alt="Accelerometer pitch and roll equations" />
-        <div class="caption">Figure: Pitch and roll equations used for accelerometer conversion.</div>
-      </div>
-
-      <div class="kv">
-        <b>Output at approximately -90, 0, +90 degrees</b>
-        <div class="small">
-          Insert a YouTube link to your demonstration video and summarize what you showed.
-        </div>
-      </div>
 
       <div class="video-container">
         <iframe
@@ -345,7 +320,7 @@ rad = deg * π / 180.0</code></pre>
       <div class="kv">
         <b>Noise in the frequency spectrum</b>
         <div class="small">
-          Fill in answer for frequency spectrum discussion here. State what data you recorded, what motion you induced, and what you observed.
+          FREQUENCY STUFF HERE
         </div>
       </div>
 
@@ -358,14 +333,14 @@ rad = deg * π / 180.0</code></pre>
         <div class="kv">
           <b>Cutoff frequency choice</b>
           <div class="small">
-            Fill in cutoff frequency reasoning here. Describe how the FFT guided the cutoff selection and the tradeoff between smoothness and lag.
+            CUTOFF FREQ CHOICE (Describe how the FFT guided the cutoff selection and the tradeoff between smoothness & lag.)
           </div>
         </div>
 
         <div class="kv">
           <b>Low-pass filter implementation</b>
           <div class="small">
-            Fill in implementation details here. Include the filter equation and how you computed the parameters from sampling rate and cutoff.
+            LOW PASS FILT (the filter equation that i put above and how i computed the parameters from sampling rate and cutoff.)
           </div>
         </div>
       </div>
@@ -374,14 +349,6 @@ rad = deg * π / 180.0</code></pre>
         <img src="./L2_Lowpass_Raw_vs_Filtered.png" alt="Raw versus filtered accelerometer signal" />
         <div class="caption">Figure: Raw accelerometer-derived signal compared to low-pass filtered output.</div>
       </div>
-
-      <div class="kv">
-        <b>Plotting in Python</b>
-        <div class="small">
-          Fill in a brief description of your Jupyter plotting workflow here. Mention what you plotted on the x-axis and y-axis.
-        </div>
-      </div>
-    </section>
 
     <section id="gyroscope" class="task">
       <h3>Gyroscope</h3>
