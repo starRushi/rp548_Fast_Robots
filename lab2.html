@@ -1,6 +1,14 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <script>
+  window.MathJax = {
+    tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
+    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
+  };
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
+
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Lab 2: IMU</title>
@@ -169,12 +177,12 @@
       <div class="grid">
         <div class="kv">
           <b>AD0_VAL definition</b>
-          <div class="small">Fill in answer for AD0_VAL definition here.</div>
+          <div class="small">The AD0_VAL definition is offered at two different locations with contrasting information. The sparkfun website says that it's by default 1, when the jumper is open, and the I2C address of the IMU is 0x69 (closed the IMU’s address is 0x68). In theory, the constant being one in the library's address (where the IMU is) should be that default value of 1 with the jumper open. However, the online data sheet contradicts this. Regardless though, in our sketchw w have #define AD0_VAL 1 anyway.</div>
         </div>
 
         <div class="kv">
           <b>Acceleration and gyroscope data discussion</b>
-          <div class="small">Fill in answer for accelerometer and gyroscope discussion here.</div>
+          <div class="small">Here I shook the board and sensor in a quick jolt. You'll note that values 1-6 in the following screenshots are accX (mg), accY (mg), accZ (mg), gyrX (DPS), gyrY (DPS), and gyrZ (DPS) in order. The first shows the accelerometer detection, and then gyro after. It seems the change in the sensor values are already well dialed into the motion. Following that is an image of the code I used to blink the led 3 times on start up to indicate success. </div>
         </div>
       </div>
 
@@ -193,9 +201,109 @@
         <div class="caption">Figure: Startup running indicator implementation (three slow blinks).</div>
       </div>
     </section>
+    <section id="equations" class="task">
+  <h3>Equations Used</h3>
 
+  <div class="kv">
+    <b>Conventions and units</b>
+    <div class="small">
+      Variables: \(a_x, a_y, a_z\) are accelerometer readings along the IMU axes. \( \omega_x, \omega_y, \omega_z \) are gyroscope angular rates.
+      Time step: \(dt\) in seconds.
+      Angle units: compute in radians, convert to degrees for display.
+    </div>
+    <pre><code>deg = rad * 180.0 / π
+rad = deg * π / 180.0</code></pre>
+  </div>
+
+  <div class="kv">
+    <b>Pitch and roll from accelerometer</b>
+    <div class="small">
+      Use accelerometer gravity direction to estimate tilt. These forms are robust using \(\operatorname{atan2}\).
+    </div>
+    <div class="callout">
+      \[
+      \text{roll}_{acc} = \operatorname{atan2}(a_y, a_z)
+      \]
+      \[
+      \text{pitch}_{acc} = \operatorname{atan2}\!\left(-a_x,\sqrt{a_y^2 + a_z^2}\right)
+      \]
+    </div>
+    <div class="small">
+      Implementation mapping: \(a_x = \texttt{accX}\), \(a_y = \texttt{accY}\), \(a_z = \texttt{accZ}\) (any consistent units, mg is fine).
+    </div>
+  </div>
+
+  <div class="kv">
+    <b>Gyroscope angle integration (pitch, roll, yaw)</b>
+    <div class="small">
+      Gyroscope gives angular rate. Integrate over time to get angle. This drifts over time due to bias.
+    </div>
+    <div class="callout">
+      \[
+      \theta_g[k] = \theta_g[k-1] + \omega[k]\;dt
+      \]
+    </div>
+    <div class="small">
+      Apply per axis (example naming only): roll uses \(\omega_x\), pitch uses \(\omega_y\), yaw uses \(\omega_z\), depending on your axis convention.
+    </div>
+  </div>
+
+  <div class="kv">
+    <b>First order low-pass filter (used on accelerometer angle or raw accel)</b>
+    <div class="small">
+      Smooth noisy signals before fusion or for plotting.
+    </div>
+    <div class="callout">
+      \[
+      y[k] = \alpha\,y[k-1] + (1-\alpha)\,x[k]
+      \]
+      \[
+      \tau = \frac{1}{2\pi f_c}
+      \qquad
+      \alpha = \frac{\tau}{\tau + dt}
+      \]
+    </div>
+    <div class="small">
+      \(f_c\) is the cutoff frequency in Hz chosen from your FFT analysis.
+    </div>
+  </div>
+
+  <div class="kv">
+    <b>Complementary filter (accelerometer plus gyroscope)</b>
+    <div class="small">
+      Combines gyro short-term stability with accel long-term reference.
+    </div>
+    <div class="callout">
+      \[
+      \theta[k] = \beta\left(\theta[k-1] + \omega[k]\;dt\right) + (1-\beta)\,\theta_{acc}[k]
+      \]
+    </div>
+    <div class="small">
+      \(\beta\) is typically close to 1 (example: 0.95 to 0.99). Use the same structure for roll and pitch.
+    </div>
+  </div>
+
+  <div class="kv">
+    <b>FFT frequency axis (for your Python spectrum plot)</b>
+    <div class="small">
+      Used to label the spectrum and justify \(f_c\). If your sampling rate is \(f_s\) and you collect \(N\) samples:
+    </div>
+    <div class="callout">
+      \[
+      f_s \approx \frac{1}{\operatorname{median}(\Delta t)}
+      \qquad
+      f[i] = \frac{i\,f_s}{N}, \; i = 0,1,\dots,\left\lfloor\frac{N}{2}\right\rfloor
+      \]
+    </div>
+  </div>
+
+  <div class="muted-box">
+    Fill in here: axis convention statement (which physical direction is +X, +Y, +Z on your board) and which gyro axis you integrated for pitch and roll.
+  </div>
+</section>
     <section id="accelerometer" class="task">
       <h3>Accelerometer</h3>
+      
 
       <div class="kv">
         <b>Pitch and roll from accelerometer</b>
