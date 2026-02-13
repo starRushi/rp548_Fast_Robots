@@ -294,6 +294,7 @@ rad = deg * π / 180.0</code></pre>
     </div>
   </div>
 
+      <!-- ACCELEROMETER SECTION STARTS HERE -->
   
 </section>
   <section id="accelerometer" class="task">
@@ -335,6 +336,11 @@ rad = deg * π / 180.0</code></pre>
       <img src="./accel_fft_pitch_roll.png" alt="FFT of accelerometer pitch and roll" />
       <div class="caption">One sided FFT of accelerometer pitch and roll (normalized amplitude).</div>
     </div>
+     <div class="small">
+       For data I rolled around the sensor at various angles and speeds to get data on natural vibrations from movement. Then I performed the transform as instructed in class. The cutoff frequency I chose was 5 Hz because the FFT showed meaningful pitch and roll dynamics in the low-frequency band. All of the noise was higher, so this leaves the motion that is slow and intentional, rather than random vibrations. This choice was critical for processing sensor data and will be necessary to not lose information from the car’s movements in future labs. I then used a first order low pass filter to get the following.
+     </div>
+
+
     
     <h2>Accelerometer Low Pass Filter</h2>
     
