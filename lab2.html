@@ -415,7 +415,7 @@ rad = deg * π / 180.0</code></pre>
         char chunk[20];
         while (*s && k < 20) chunk[k++] = *s++;
         txChar.writeValue((const unsigned char*)chunk, k); // notify chunk
-        delay(2); // small pacing helps reliability
+        delay(2); // small pacing helps it stop dropping info randomly
       }
     }
     
