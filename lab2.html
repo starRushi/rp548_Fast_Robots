@@ -355,7 +355,11 @@ rad = deg * π / 180.0</code></pre>
       <img src="./gyro_vs_accel_complementary_pitch_roll.png" alt="Pitch and roll comparison across accel, filtered accel, gyro, and complementary filter" />
       <div class="caption">Pitch and roll: raw accel, filtered accel, integrated gyro, complementary filter.</div>
     </div>
-    
+
+     <div class="small">
+      In the graphs below you can see the results of the IMU being rolled around on the gyroscope data as well. You’ll note that it’s way more smooth than the accelerometer, but like mentioned in class, it’s much more susceptible to drifting over time. However, with good consistant sampling, you can keep a true dt value and have less error per step. The complementary filter I implemented was great, much more stable than the accelerometer and much less laggy than the low pass filter alone, as well as free of the gyro drift. 
+     </div>
+
     <div class="figure">
       <img src="./gyro_yaw_time.png" alt="Gyroscope yaw over time" />
       <div class="caption">Yaw angle from gyroscope integration.</div>
