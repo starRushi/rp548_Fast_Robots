@@ -144,7 +144,7 @@
     <section id="overview">
       <h2>Overview</h2>
       <p>
-        <span class="small">I messed something up with the write up and it didnt get pushed. Please wait to grade it until I fix it. I just need the plane to land and i can upload the correct text.</span>
+        <span class="small">In this lab we tested the IMU sensor's range and quality, anaylizing both the accelerometer and gyro. We then took in data and tried various methods of process and transmitting it.</span>
       </p>
 
       <div class="callout toc">
@@ -153,9 +153,7 @@
           <li><a href="#setup">Set up the IMU</a></li>
           <li><a href="#accelerometer">Accelerometer</a></li>
           <li><a href="#gyroscope">Gyroscope</a></li>
-          <li><a href="#sample-data">Sample Data and BLE Transfer</a></li>
           <li><a href="#stunt">Record a Stunt</a></li>
-          <li><a href="#code">Code Links</a></li>
         </ul>
       </div>
     </section>
@@ -308,7 +306,7 @@ rad = deg * π / 180.0</code></pre>
         allowfullscreen>
       </iframe>
     </div>
-    <div class="caption">Video: Pitch and roll output demonstration near -90, 0, +90 degrees.</div>
+    <div class="caption">Video: Pitch and roll output demonstration near -90, 0, +90 degrees with requested visual of output.</div>
   
     <div class="grid">
       <div class="kv">
@@ -337,7 +335,7 @@ rad = deg * π / 180.0</code></pre>
       <div class="caption">One sided FFT of accelerometer pitch and roll (normalized amplitude).</div>
     </div>
      <div class="small">
-       For data I rolled around the sensor at various angles and speeds to get data on natural vibrations from movement. Then I performed the transform as instructed in class. The cutoff frequency I chose was 5 Hz because the FFT showed meaningful pitch and roll dynamics in the low-frequency band. All of the noise was higher, so this leaves the motion that is slow and intentional, rather than random vibrations. This choice was critical for processing sensor data and will be necessary to not lose information from the car’s movements in future labs. I then used a first order low pass filter to get the following.
+       For data I rolled around the sensor in my hands at various angles and speeds to get data on natural vibrations from movement, and also let it be vibrated by the car. Then I performed the transform as instructed in class. The cutoff frequency I chose was 5 Hz because the FFT showed meaningful pitch and roll dynamics in the low-frequency band. All of the noise was higher, so this leaves the motion that is slow and intentional, rather than random vibrations. This choice was critical for processing sensor data and will be necessary to not lose information from the car’s movements in future labs. I then used a first order low pass filter to get the following.
      </div>
 
 
@@ -357,7 +355,7 @@ rad = deg * π / 180.0</code></pre>
     </div>
 
      <div class="small">
-      In the graphs below you can see the results of the IMU being rolled around on the gyroscope data as well. You’ll note that it’s way more smooth than the accelerometer, but like mentioned in class, it’s much more susceptible to drifting over time. However, with good consistant sampling, you can keep a true dt value and have less error per step. The complementary filter I implemented was great, much more stable than the accelerometer and much less laggy than the low pass filter alone, as well as free of the gyro drift. 
+      In the graphs below you can see the results of the IMU being rolled around on the gyroscope data as well. You’ll note that it’s way more smooth than the accelerometer, but like mentioned in class, it’s much more susceptible to drifting over time. However, with good consistant sampling, you can keep a true dt value and have less error per step. When testing different sampling frequencies, we got a lot of error build up from it. The complementary filter I implemented was great, much more stable than the accelerometer and much less laggy than the low pass filter alone, as well as free of the gyro drift. I chose .98 for beta, and as you can see, it performed very well even under quick changes and a large variety angles and movements. 
      </div>
 
     <div class="figure">
@@ -377,7 +375,7 @@ rad = deg * π / 180.0</code></pre>
     </div>
     <div class="caption">Video: Recorded stunt.</div>
      <div class="small">
-        Here I played around and managed to get the car to go on it's side, which I think will introduce some difficulty later on in programing this car. 
+        Here I played around and managed to get the car to go on it's side, which I think will introduce some difficulty later on in programing this car. I tested this all for about 10 minutes out on carpet, which the car actually was not very reliable on. I'm unsure if it was the type of carpet, but I expected it to skid around less. However, I tried various accelerations in straight lines, curves, and flips, and almost nothing went as intended. When accelerating, the wheels would often not catch proeprly on the carpet. Especially when turning, though, the car was entirely unpredictable. I tried driving a path, and then closing my eyes and trying to drive the same path (a loop through my friend's kitchen to the living room) and it was impossible to predict. 
      </div>
      <div class="small">
         Credit in this lab: I used multiple past student's websites for guidance, especially on the coding and graphing sections to know what was appropriate/relevent to include and debug. I used chatgpt 5.2 to help me debug the generation of graphs, and help make the html for this website.
