@@ -1,17 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <script>
-  window.MathJax = {
-    tex: { inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']] },
-    options: { skipHtmlTags: ['script','noscript','style','textarea','pre','code'] }
-  };
-</script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lab 2: IMU</title>
+  <title>Lab 3: Time of Flight Sensors</title>
   <style>
     :root{
       --text:#111;
@@ -95,8 +87,6 @@
     }
     .tight{ margin-top: 0; }
     .small{ font-size:16px; color:var(--muted); }
-    .toc a{ color: var(--link); text-decoration:none; }
-    .toc a:hover{ text-decoration:underline; }
     @media (max-width: 760px){
       .grid{ grid-template-columns: 1fr; }
       body{ font-size: 17px; }
@@ -117,65 +107,162 @@
       height:100%;
       border:0;
     }
-    .muted-box{
-      border:1px dashed var(--rule);
-      padding: 12px 14px;
-      background:#fff;
-      color: var(--muted);
-      margin: 12px 0;
-    }
   </style>
 </head>
 
+
+
+
+
+
+
+
+
+
+
+
 <body>
   <div class="wrap">
+
     <header>
       <div class="crumbs">
         <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 3</span>
       </div>
-      <h1>Lab 3: Tof</h1>
+      <h1>Lab 3: Time of Flight Sensors</h1>
       <div class="meta">
         <span>Board: SparkFun RedBoard Artemis Nano</span> ·
         <span>Interface: USB Serial + BLE</span> ·
-        <span>IMU: SparkFun 9DoF ICM-20948</span>
+        <span>IMU: SparkFun 9DoF ICM-20948</span> ·
         <span>ToF: VL53L1X Time-of-Flight Distance Sensor</span>
       </div>
     </header>
 
-    <section id="overview">
+    <section>
       <h2>Overview</h2>
       <p>
-        <span class="small">In this lab we tested the ToF sensors, learning to use and optimize both at the same time, and sending that over bluetooth.</span>
+        <span class="small">In this lab we set up two VL53L1X Time-of-Flight distance sensors and an ICM-20948 IMU, learning to run both ToF sensors simultaneously (in my case, using XSHUT address reassignment), and sending that data over Bluetooth.</span>
+      </p>
+    </section>
+
+    <section>
+      <h2>Prelab</h2>
+
+      <h3>I2C Address</h3>
+      <p>
+        Since the default I2C address as 0x52, 8-bit (<a href="https://www.st.com/resource/en/datasheet/vl53l1x.pdf">according to the datasheet</a>), it'll be 0x29 in the 7-bit format that Arduino uses; essentially it means when the I2C scanner is run, it reports the sensor at address 0x29 (which it did, yay). 
       </p>
 
+      <h3>Approach: Using Two ToF Sensors</h3>
+      <p>
+        Both VL53L1X sensors have the same hardwired I2C address (0x29), so they cannot both be active on the bus at the same time without causing problems. I chose the XSHUT approach over toggling sensors on and off each read. So when you boot it up, the second sensor's XSHUT pin (wired to A2) is held LOW, keeping it off the bus. The first sensor initializes at 0x29, then its address is changed to 0x32. The XSHUT pin is then set HIGH, bringing the second sensor back online at the now-free 0x29. This only needs to happen once at startup, after which both sensors work perfectly. The alternative, which would be continuously enabling and disabling sensors using each an XSHUT would add latency and complexity every single cycle, which kind of defeats the purpose of fast sampling.
+      </p>
+
+      <h3>Sensor Placement</h3>
+      <p>
+        I plan to mount both ToF sensors on the front of the robot. This may be be a bad idea that I change later, but for now I want to have one configured for short-range mode and one for long-range mode. The short-range sensor will handle precise, close-distance obstacle detection so I can have really fast and accurate collision avoidance, while the long-range sensor will maybe provide earlier detection of objects farther ahead, which lets me have smoother speed control and actual path planning. Notably, obstacles that could still be missed include objects approaching from the rear or sides, also short obstacles beneath the sensor beam, or thin objects like wires that fall between where it measures in the field of view. Also, any targets beyond the maximum eff. range of the long distance ToF.
+      </p>
+
+      <h3>Wiring Diagram</h3>
+      <p>
+        The Artemis connects to the QWIIC breakout board, which provides SDA/SCL/3.3V/GND to both ToF sensors and the IMU with chained QWIIC connectors through a center piece. The second ToF sensor's XSHUT pin has an additional wire soldered from it to pin A2 on the Artemis. This pin gave me a large headache, as originally I wanted it to go to A5, then I accidentally soldered it shut, then I tried to do A4 only to realize there is no A4, and then finally cut that off and used A2. Wire lengths were chosen with chassis placement in mind, trying to give myself as much space to work with when assembling later, especially a good length for the ToF sensors that have to go in the front.
+      </p>
+
+      <div class="figure">
+        <img src="./Combo_Diagram.png" alt="Wiring diagram" />
+        <div class="caption">Figure: Wiring showing Artemis, QWIIC breakout, two ToF sensors, and IMU connections. XSHUT of ToF 2 is wired to A2.</div>
+      </div>
+
+      <div class="figure">
+        <img src="./wiring_handwritten.png" alt="Handwritten wiring notes" />
+        <div class="caption">Figure: Original handwritten wiring planning from the physical lab, A5 replaced with A2.</div>
+      </div>
     </section>
 
     
-    <section id="setup">
-      <h2>Pre Lab & Lab Tasks</h2>
-      <h3>Diagram and Set up the ToF Sensors</h3>
 
-      <div class="figure">
-        <img src="./Combo_Diagram.png" alt="Artemis ToF connections" />
-        <div class="caption">Figure: Artemis to everything wiring using Qwiic connectors, that also diagrams the connections. Note that due to a soldering error, I made the momentary decision to switch from A5 to A4. This choice would hault me.</div>
+
+
+
+
+
+
+
+    <section>
+      <h2>Lab Tasks</h2>
+
+  
+      <div class="task">
+        <h3>Single ToF Sensor</h3>
+        <p>
+          The first ToF sensor was connected to the QWIIC breakout board and tested with the SparkFun ReadDistance example. 
+        </p>
+
+        <div class="figure">
+          <img src="./singletof.png" alt="Single ToF sensor working" />
+          <div class="caption">Figure: Single ToF sensor connected and returning distance readings via example sketch.</div>
+        </div>
+
+        <div class="figure">
+          <img src="./i2c_scan.png" alt="I2C scan results" />
+          <div class="caption">Figure: I2C scanner output showing device at 0x29. It matches the VL53L1X default. Note: When the IMU is also connected, a second device appears at 0x69 (ICM-20948 with AD0 high).</div>
+        </div>
       </div>
-    </section>
 
 
-      <h2>Single Sensor</h2>
-
-
-      <div class="figure">
-        <img src="./singletof.png" alt="Artemis ToF connections" />
-        <div class="caption">Functioning with example code.</div>
+      <div class="task">
+        <h3>Sensor Mode Selection</h3>
+        <p>
+          The VL53L1X has three distance modes. Short mode has a maximum range of a pretty short 1.3m but is less affected by ambient light and provides faster, more reliable readings at close range. Medium mode extends to 3m, and Long mode reaches 4m but is more susceptible to ambient light interference and has slower ranging times. I chose to work with Short mode for now since it's more important for the final robot. I may change my mind on the placement of the second sensor, so I don't want to waste time working with it until I'm certain. But anyway, our main task is object collision prevention so having a good, well calibrated, fast sensor, then that's the best way to work towards our goal. 
+        </p>
       </div>
-    </section>
 
-        <section id="setup">
-      <h2>Double Sensor</h2>
+ 
+      <div class="task">
+        <h3>ToF Sensor Characterization</h3>
+        <p>
+          I tested the sensor accuracy and repeatability by placing a flat surface at known distances and collecting a reading at each distance. The sensor was tested at 100mm intervals from 100mm to 1200mm.
+        </p>
 
-      <div class="figure">
-        <img src="./doubleTOF.png" alt="Artemis ToF connections" />
-        <div class="caption">Modified to use XSHUT for second sensor. Notably, to use two TOF sensors at the same time, you must use XSHUT and change the sensor's I2C address. Why? Well, both VL53L1X sensors power up with the same default I2C address, 0x29, which causes a conflict if they are active at the same time. To prevent this, one sensor has to be temp disabled using its XSHUT pin. Sensor 2’s XSHUT is connected to an Artemis GPIO pin and held LOW at startup, keeping it off the I2C bus. Sensor 1 remains active and initializes at 0x29. The code then changes Sensor 1’s address to 0x48. After that, Sensor 2 is turned back on by setting the XSHUT pin HIGH. Since 0x29 is now unused, Sensor 2 safely takes that address. This method avoids I2C collisions by ensuring only one sensor is active during address reassignment. Relying only on software to change both addresses at boot would require precise timing and could fail if the system resets or glitches. Using XSHUT provides controlled startup sequencing and makes the system more reliable even when fast.</div>
+        <div class="figure">
+          <img src="./tof_accuracy.png" alt="ToF accuracy plot" />
+          <div class="caption">Figure: ToF measured distance vs. actual distance. The sensor tracks closely up to about 1000mm, with increasing error near the edge of Short mode range but almost none honestly.</div>
+        </div>
+
+        <div class="callout">
+          <b>Characterization Summary</b>
+          <div class="small">
+            Range: [] in Short mode.<br>
+            Accuracy: Within ±[]mm for distances under []m.<br>
+            Repeatability: Standard deviation under [] mm at a fixed target in stable lighting.<br>
+            Ranging time: ~[]s per reading in Short mode with default timing budget.
+          </div>
+        </div>
       </div>
-    </section>
+
+
+      <div class="task">
+        <h3>Dual ToF Sensors</h3>
+        <p>
+          To use two ToF sensors simultaneously, I followed the process I outlined in prelab. There we some issues for many days as I worked on this, as often it would fail to detect the second sensor. It was at this time I rewired it from A5 to A2, because the connection to A5 was lacking and then completely broken when I tried to fix it.
+        </p>
+
+        <pre><code>// XSHUT Mech
+pinMode(XSHUT_PIN, OUTPUT);
+digitalWrite(XSHUT_PIN, LOW);   // keeps sensor 2 off
+delay(10);
+
+tof1.begin();                   // sensor 1 start at 0x29
+tof1.setDistanceModeShort();
+tof1.setI2CAddress(0x32);      // move sensor 1 to 0x32
+
+digitalWrite(XSHUT_PIN, HIGH);  // sensor 2 turns on at 0x29, we leave it there
+delay(10);
+tof2.begin();
+tof2.setDistanceModeShort();</code></pre>
+
+        <div class="figure">
+          <img src="./doubleTOF.png" alt="Both ToF sensors working" />
+          <div class="caption">Figure: Both ToF sensors returning independent distance readings simultaneously after XSHUT address reassignment succeeds.</div>
+        </div>
+      </div>
+
