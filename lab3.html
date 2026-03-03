@@ -220,7 +220,7 @@
       <div class="task">
         <h3>ToF Sensor Characterization</h3>
         <p>
-          I tested the sensor accuracy and repeatability by placing a flat surface at known distances and collecting a reading at each distance. The sensor was tested at 100mm intervals from 100mm to 1200mm.
+          I tested the sensor accuracy and repeatability by placing a flat surface at known distances and collecting a reading at each distance. The sensor was tested at 100mm intervals from 100mm to 1000mm. I didn't have a ruler but printer paper is 29.7cm, so I folded it into thirds, flattened them, and laid 4 out in a line. I used a box and moved it away in those increments. 
         </p>
 
         <div class="figure">
@@ -231,10 +231,10 @@
         <div class="callout">
           <b>Characterization Summary</b>
           <div class="small">
-            Range: [] in Short mode.<br>
-            Accuracy: Within ±[]mm for distances under []m.<br>
-            Repeatability: Standard deviation under [] mm at a fixed target in stable lighting.<br>
-            Ranging time: ~[]s per reading in Short mode with default timing budget.
+            Range: 100mm to at least 1000mm in Short mode. Further testing got me up to a max of 1.3m<br>
+            Accuracy: Within ±21mm for distances under 1m.<br>
+            Repeatability: Standard deviation under 4 mm at a fixed target in stable lighting.<br>
+            Ranging time: ~50ms per reading in Short mode with default 'timing budget'.
           </div>
         </div>
       </div>
@@ -329,11 +329,11 @@ ble.send_command(CMD.SEND_TOF, "")</code></pre>
 
         <div class="figure">
           <img src="./tof_plot.png" alt="ToF distance vs time plot" />
-          <div class="caption">Figure: Time vs Distance plot for both ToF sensors, from data collected over BLE. Sensors show independent readings over 10 seconds.</div>
+          <div class="caption">Figure: Time vs Distance plot for both ToF sensors, from data collected over BLE. Sensors show independent readings of my hand over 10 seconds. I begin by putting it in view around 2 seconds in, then moving away slowly. At the end, one sensor slips out of my grasp and is out of alignment.</div>
         </div>
       </div>
 
-      <!-- ── BLE IMU Plot ── -->
+
       <div class="task">
         <h3>IMU Data Over Bluetooth</h3>
         <p>
@@ -375,7 +375,7 @@ ble.send_command(CMD.SEND_IMU, "")</code></pre>
     <section>
       <h2>Discussion</h2>
       <p>
-        The buffered approach we were introduced to in Lab 1 was reused here and works quite well. However, for actual movement it needs to be different from this, which was optimized for collecting data. The sensors are sampled as fast as they produce data and THEN the results are stored in RAM, and then the entire dataset is transmitted over BLE AFTER recording ends. This notably avoids the BLE bottleneck during data collection and ensures maximum sampling rate but would NOT work real time. 
+        The buffered approach we were introduced to in Lab 1 was reused here and works quite well. However, for actual movement it needs to be different from this, which was optimized for collecting data. The sensors are sampled as fast as they produce data and THEN the results are stored in RAM, and then the entire dataset is transmitted over BLE AFTER recording ends. This notably avoids the BLE bottleneck during data collection and ensures maximum sampling rate but would NOT work real time. As an aside, for this lab I focused on short mode since I wasn't sure if I'd need long mode and didn't want to waste time calibrating if I change my mind. I do think my plan is solid, but I would like to note that almost no one else I've seen has something similar, which makes me doubtful. 
       </p>
       <p>
         Collaborations: As I turned this lab in late, I was able to observe the structure and problem solving of my friend's websites including Rajarshi Das, Clarence Dagins, and also past students like Brooke Hudson. I had to do a lot of debugging with GPT and Claude as combining my codes did not work well. I also used it to fix my pin issue, and to format the HTML of the website.
