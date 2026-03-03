@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Lab 3: Time of Flight Sensors</title>
+  <title>Lab 4: Motors and Open Loop Control</title>
   <style>
     :root{
       --text:#111;
@@ -85,7 +85,6 @@
       padding-top: 18px;
       margin-top: 18px;
     }
-    .tight{ margin-top: 0; }
     .small{ font-size:16px; color:var(--muted); }
     @media (max-width: 760px){
       .grid{ grid-template-columns: 1fr; }
@@ -110,19 +109,221 @@
   </style>
 </head>
 
-
-
-
-
 <body>
   <div class="wrap">
 
     <header>
       <div class="crumbs">
-        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 3</span>
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 4</span>
       </div>
-      <h1>Lab 4: Work in Progresss</h1>
+      <h1>Lab 4: Motors and Open Loop Control</h1>
       <div class="meta">
-   <div>
-  <div>
-</div>
+        <span>Board: SparkFun RedBoard Artemis Nano</span> ·
+        <span>Motor Drivers: DRV8833 Dual H-Bridge</span> ·
+        <span>Battery: 850mAh Li-Ion (+750 noted in diagrams, computer used in place)</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>
+        <span class="small">In this lab we wired the batteries with two motor controlers that were parallel-coupled inputs/outputs for higher current and did manual RC control as well as open loop control of the car.</span>
+      </p>
+    </section>
+
+    <!-- PRELAB -->
+    <section>
+      <h2>Prelab</h2>
+
+      <h3>Motor Driver Wiring</h3>
+      <p>
+        Each dual motor driver has two H-bridge channels, but they're not very strong. Since we need more current, both channels on each driver are parallel-coupled with inputs tied together and outputs tied together. You can double the current without overheating because they're on the same clock on the IC. Motor A (pictured on the right, will be on left) is controlled by pins 4 (forward) and A5 (reverse). Motor B (pictured left, will be on the right) uses pins A1 (forward) and A2 (reverse). These were chosen because they are all PWM-capable (I checked this time!) and easy to keep track of. 
+      </p>
+
+      <div class="figure">
+        <img src="./lab4_wiring_diagram.png" alt="Motor driver wiring diagram" />
+        <div class="caption">Figure: Wiring diagram showing Artemis, two motor drivers with parallel-coupled channels, motors, and battery connections. Artemis powered by 750mAh battery via USB (though in this instance, it was powered by my laptop mostly), motors powered by 850mAh battery through motor drivers.</div>
+      </div>
+
+      <h3>Separate Batteries</h3>
+      <p>
+        The Artemis and the motors are powered from separate batteries for simplicity and also so the motor isn't underpowered. It isolates things, which is good because motors draw large, sudden currents right when starting or stalling, which then causes voltage drops which could reset the artemes or brown it out. All grounds are grounded for common reference.
+      </p>
+    </section>
+
+    <!-- LAB TASKS -->
+    <section>
+      <h2>Lab Tasks</h2>
+
+      <!-- Power Supply + Oscilloscope -->
+      <div class="task">
+        <h3>Power Supply and Oscilloscope Setup</h3>
+        <p>
+          AnalogWrite was used to generate PWM signals for the driver, with an oscilliscope connected.
+        </p>
+
+        <div class="figure">
+          <img src="./lab4_bench_setup.png" alt="Bench setup with power supply and scope" />
+          <div class="caption">Figure: Bench setup showing motor driver connected to external power supply and oscilloscope probes on the output.</div>
+        </div>
+
+        <pre><code>// PWM test: ramp motor speed
+analogWrite(MOTA_FWD, 128);  // 50% duty cycle
+analogWrite(MOTA_REV, 0);</code></pre>
+
+        <div class="figure">
+          <img src="./lab4_oscilloscope.png" alt="Oscilloscope showing PWM" />
+          <div class="caption">Figure: Oscilloscope capture showing PWM output from the motor driver at ~50% duty cycle.</div>
+        </div>
+      </div>
+
+      <!-- Single Motor -->
+      <div class="task">
+        <h3>Single Motor — Both Directions</h3>
+        <p>
+          With the car on its side and wheels elevated, the motor was tested in both forward and reverse. The code sets one pin HIGH and the other LOW to control direction via the H-bridge.
+        </p>
+
+        <pre><code>// Forward
+analogWrite(MOTA_FWD, 150);
+analogWrite(MOTA_REV, 0);
+delay(2000);
+
+// Reverse
+analogWrite(MOTA_FWD, 0);
+analogWrite(MOTA_REV, 150);
+delay(2000);</code></pre>
+
+        <!-- TODO: Replace with my YouTube video -->
+        <div class="video-container">
+          <iframe
+            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
+            title="Single motor test"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption">Video: Single motor spinning forward and reverse with car on its side.</p>
+      </div>
+
+      <!-- Both Motors + Battery -->
+      <div class="task">
+        <h3>Both Motors — Battery Powered</h3>
+        <p>
+          After verifying each motor individually, both were connected and powered from the 850mAh battery. The code runs both motors forward, then reverse, then spins in each direction to confirm independent control.
+        </p>
+
+        <div class="video-container">
+          <iframe
+            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
+            title="Dual motor battery test"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption">Video: Both wheels spinning with 850mAh battery powering the motor drivers.</p>
+      </div>
+
+      <!-- Assembly -->
+      <div class="task">
+        <h3>Car Assembly</h3>
+        <p>
+          All components were aproximately installed inside the chassis, with further refinedments in the process of being designed. The motor drivers are secured with tape near each motor to keep wire runs short and reduce EMI, and are twisted together for that purpose as well. The Artemis sits on the othe side with the QWIIC breakout board, and the 850mAh battery is tucked underneath. Nothing sticks out past the wheels so the car can flip without damage and the cover goes back on. Right now the sensors are inside but I will be cutting holes in the top half of the car to fit them later.
+        </p>
+
+        <div class="figure">
+          <img src="./lab4_assembled.png" alt="Assembled car" />
+          <div class="caption">Figure: All components secured inside the car chassis. Motor drivers near motors, Artemis and sensors in front, batteries secured underneath.</div>
+        </div>
+      </div>
+
+      <!-- TODO PWM Lower Limit -->
+      <div class="task">
+        <h3>Lower PWM Limit</h3>
+        <p>
+
+          The PWM was ramped up slowly while the car sat on the ground. The car started moving forward at a PWM value of approximately [fil this]. For on-axis turns, the minimum was around [fill this]. As we were notified, starting from rest required a slightly higher PWM than keeping the robot in motion due to what I assume to be static friction being higher than kinetic friction.
+        </p>
+      </div>
+
+      <!-- Calibration -->
+      <div class="task">
+        <h3>Calibration and Straight Line</h3>
+        <p>
+          <!-- TODO: fill in my calibration factor -->
+          Without calibration, the robot drifted [LEFT/RIGHT] due to slight differences in motor output. After testing, a calibration factor of [FILL] was applied to the [LEFT/RIGHT] motor. This means its PWM is multiplied by that factor to match the other side. The robot was then able to follow a straight line of tape for [FIL:L]m with the body of the car over the line.
+        </p>
+
+        <pre><code>float CAL_FACTOR = 1.0;  // UPDATE with my value
+
+int left_speed = (int)(BASE_SPEED * CAL_FACTOR);
+int right_speed = BASE_SPEED;
+
+drive(left_speed, right_speed);</code></pre>
+
+        <div class="video-container">
+          <iframe
+            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
+            title="Straight line calibration"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption">Video: Robot driving straight along tape line for []m after calibration.</p>
+      </div>
+
+      <!-- Open Loop -->
+      <div class="task">
+        <h3>Open Loop Control</h3>
+        <p>
+          I made a pre-programmed sequence to be loaded onto the Artemis: drive forward, turn right 90°, drive forward, turn left 90°, drive forward, spin 360°, then reverse. All movements were timed and the robot stops automatically at the end of the sequence so it doesn't run away.
+        </p>
+
+        <pre><code>// Open loop sequence (excerpt)
+drive(100, 100);    // forward
+delay(1500);
+stop(); delay(300);
+
+drive(100, -100);   // right
+delay(500);
+stop(); delay(300);
+
+drive(100, 100);    // forward 
+delay(1500);
+stop(); delay(300);
+
+drive(150, -150);   // spin (wheeeee)
+delay(1200);
+
+drive(-80, -80);    // reverse
+delay(1000);
+stop();</code></pre>
+
+        <div class="video-container">
+          <iframe
+            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
+            title="Open loop demo"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption">Video: Open loop untethered control demo showing forward driving, turns, and a spin.</p>
+      </div>
+
+    </section>
+
+    <section>
+      <h2>Discussion</h2>
+      <p>
+        Collaborations: I used a soldering iron from my friend from outside of class and bought solder to use one it, which let me do a lot of last minute work. I also had instructional help from Rajarshi Das, mostly confirming my wiring questions. I used past diagrams from Brooke Hudson and Anunth Ramaswami to know how to create mine. As always, Claude to debug my code, explain some concepts, and help create the website html. 
+      </p>
+    </section>
+
+  </div>
+</body>
+</html>
+
