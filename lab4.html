@@ -91,21 +91,6 @@
       body{ font-size: 17px; }
       .wrap{ padding: 36px 18px 60px; }
     }
-    .video-container{
-      position: relative;
-      width: 100%;
-      padding-top: 56.25%;
-      border:1px solid var(--rule);
-      background:#fff;
-      margin: 12px 0;
-    }
-    .video-container iframe{
-      position:absolute;
-      top:0; left:0;
-      width:100%;
-      height:100%;
-      border:0;
-    }
   </style>
 </head>
 
@@ -194,16 +179,9 @@ analogWrite(MOTA_FWD, 0);
 analogWrite(MOTA_REV, 150);
 delay(2000);</code></pre>
 
-        <!-- TODO: Replace with my YouTube video -->
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
-            title="Single motor test"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
+        <video controls style="max-width:100%;border-radius:8px;margin:12px 0;">
+          <source src="videos/single_motor.mp4" type="video/mp4">
+        </video>
         <p class="caption">Video: Single motor spinning forward and reverse with car on its side.</p>
       </div>
 
@@ -214,15 +192,9 @@ delay(2000);</code></pre>
           After verifying each motor individually, both were connected and powered from the 850mAh battery. The code runs both motors forward, then reverse, then spins in each direction to confirm independent control.
         </p>
 
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
-            title="Dual motor battery test"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
+        <video controls style="max-width:100%;border-radius:8px;margin:12px 0;">
+          <source src="videos/dual_motor.mp4" type="video/mp4">
+        </video>
         <p class="caption">Video: Both wheels spinning with 850mAh battery powering the motor drivers.</p>
       </div>
 
@@ -243,18 +215,25 @@ delay(2000);</code></pre>
       <div class="task">
         <h3>Lower PWM Limit</h3>
         <p>
-
-          The PWM was ramped up slowly while the car sat on the ground. The car started moving forward at a PWM value of approximately [fil this]. For on-axis turns, the minimum was around [fill this]. As we were notified, starting from rest required a slightly higher PWM than keeping the robot in motion due to what I assume to be static friction being higher than kinetic friction.
+          The PWM was ramped up slowly while the car sat on the ground. Starting from rest required a slightly higher PWM than keeping the robot in motion, which makes sense since static friction is higher than kinetic friction.
         </p>
-      </div>
+
+        <div class="figure">
+          <img src="./pwm_forward_onaxis.png" alt="PWM values for forward and on-axis turns" />
+          <div class="caption">Figure: PWM values for forward and on-axis movement thresholds.</div>
+        </div>
 
       <!-- Calibration -->
       <div class="task">
         <h3>Calibration and Straight Line</h3>
-        <p>
-          <!-- TODO: fill in my calibration factor -->
-          Without calibration, the robot drifted [LEFT/RIGHT] due to slight differences in motor output. After testing, a calibration factor of [FILL] was applied to the [LEFT/RIGHT] motor. This means its PWM is multiplied by that factor to match the other side. The robot was then able to follow a straight line of tape for [FIL:L]m with the body of the car over the line.
+       <p>
+          Without calibration, the robot drifted due to slight differences in motor output. A calibration factor was applied to one motor so its PWM is multiplied to match the other side, allowing the robot to follow a straight line of tape.
         </p>
+
+        <div class="figure">
+          <img src="./calibration_results.png" alt="Calibration testing and results" />
+          <div class="caption">Figure: Calibration testing and results.</div>
+        </div>
 
         <pre><code>float CAL_FACTOR = 1.0;  // UPDATE with my value
 
@@ -263,15 +242,9 @@ int right_speed = BASE_SPEED;
 
 drive(left_speed, right_speed);</code></pre>
 
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
-            title="Straight line calibration"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
+        <video controls style="max-width:100%;border-radius:8px;margin:12px 0;">
+          <source src="videos/calibration.mp4" type="video/mp4">
+        </video>
         <p class="caption">Video: Robot driving straight along tape line for []m after calibration.</p>
       </div>
 
@@ -302,15 +275,9 @@ drive(-80, -80);    // reverse
 delay(1000);
 stop();</code></pre>
 
-        <div class="video-container">
-          <iframe
-            src="https://www.youtube.com/embed/VIDEO_ID_HERE"
-            title="Open loop demo"
-            frameborder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen>
-          </iframe>
-        </div>
+        <video controls style="max-width:100%;border-radius:8px;margin:12px 0;">
+          <source src="videos/open_loop.mp4" type="video/mp4">
+        </video>
         <p class="caption">Video: Open loop untethered control demo showing forward driving, turns, and a spin.</p>
       </div>
 
@@ -326,4 +293,5 @@ stop();</code></pre>
   </div>
 </body>
 </html>
+
 
