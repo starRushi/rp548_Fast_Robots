@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lab 5: Linear PID Control and Linear Interpolation</title>
+  <style>
+    :root{
+      --text:#111;
+      --muted:#555;
+      --rule:#d8d8d8;
+      --bg:#ffffff;
+      --codebg:#f6f6f6;
+      --link:#0b3d91;
+      --maxw: 860px;
+    }
+    html,body{ background:var(--bg); color:var(--text); }
+    body{
+      margin:0;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 2.0;
+      font-size: 18px;
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 48px 28px 72px; }
+    header{ border-bottom:1px solid var(--rule); padding-bottom: 18px; margin-bottom: 26px; }
+    .crumbs{ font-size: 16px; color: var(--muted); }
+    .crumbs a{ color: var(--link); text-decoration: none; }
+    .crumbs a:hover{ text-decoration: underline; }
+    h1{ font-size: 28px; margin: 6px 0 0; line-height: 1.4; }
+    .meta{ color: var(--muted); font-size: 16px; margin-top: 6px; }
+    h2{ font-size: 22px; margin: 34px 0 8px; }
+    h3{ font-size: 19px; margin: 26px 0 6px; }
+    p{ margin: 10px 0; }
+    ul{ margin: 10px 0 10px 26px; }
+    li{ margin: 6px 0; }
+    hr{ border:0; border-top:1px solid var(--rule); margin: 26px 0; }
+    .callout{
+      border:1px solid var(--rule);
+      padding: 14px 16px;
+      background: #fcfcfc;
+      margin: 16px 0;
+    }
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    pre{
+      background: var(--codebg);
+      border:1px solid var(--rule);
+      padding: 12px 14px;
+      overflow:auto;
+      margin: 12px 0;
+    }
+    .figure{
+      border:1px solid var(--rule);
+      padding: 10px;
+      background:#fff;
+      margin: 12px 0;
+    }
+    .figure img, .figure video{
+      max-width:100%;
+      display:block;
+      margin: 0 auto;
+    }
+    .caption{
+      color: var(--muted);
+      font-size: 15px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .task{
+      border-top:1px solid var(--rule);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    .small{ font-size:16px; color:var(--muted); }
+    @media (max-width: 760px){
+      body{ font-size: 17px; }
+      .wrap{ padding: 36px 18px 60px; }
+    }
+    .video-container{
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border:1px solid var(--rule);
+      background:#fff;
+      margin: 12px 0;
+    }
+    .video-container iframe{
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+  </style>
+</head>
