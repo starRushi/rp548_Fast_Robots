@@ -96,3 +96,189 @@
     }
   </style>
 </head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="crumbs">
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 5</span>
+      </div>
+      <h1>Lab 5: Linear PID Control and Linear Interpolation</h1>
+      <div class="meta">
+        <span>Board: SparkFun RedBoard Artemis Nano</span> ·
+        <span>Sensor: VL53L1X ToF</span> ·
+        <span>Controller: PD</span>
+      </div>
+    </header>
+
+    <!-- OVERVIEW -->
+    <section>
+      <h2>Overview</h2>
+      <p>
+        In this lab, the robot stops at exactly 304mm away from a wall driving full speed, using a PD controller with feedback from the ToF sensor. A linear extrapolation algorithm was also implemented to decouple the PD loop rate from the slower ToF sensor rate.
+      </p>
+    </section>
+
+    <!-- PRELAB -->
+    <section>
+      <h2>Prelab: BLE Debugging Setup</h2>
+
+      <h3>Bluetooth Communication</h3>
+      <p>
+        PID runs are triggered over BLE from a Python Jupyter notebook. The Artemis receives commands (start/stop, update gains, change setpoint) and transmits logged data after each run. Gains can be updated without reflashing.
+      </p>
+
+      <p>
+        Commands are parsed using the RobotCommand class, which I added to the existing ones on the yaml. 
+      </p>
+
+      <pre><code>enum CommandTypes {
+    START_PID,    // To begin timed PID run
+    STOP_PID,     // Emergency stop as suggested I have
+    SEND_DATA,    // To transmit logged arrays over BLE
+    SET_GAINS,    // Update Kp, Ki, Kd while tuning on the run
+    SET_SETPOINT, // Change target distance (mm)
+};</code></pre>
+
+      <p>
+        Each PID loop iteration is logged to arrays on the Artemis. After the run, SEND_DATA streams each point as a pipe-delimited string over BLE.
+      </p>
+
+      <pre><code>log_time[i]      = now - pid_start_time;
+log_tof_raw[i]   = raw_tof;        // -1 if extrapolated
+log_tof_est[i]   = current_distance;
+log_motor_out[i] = motor_cmd;
+log_p_term[i]    = p_term;
+log_d_term[i]    = d_term;</code></pre>
+
+      <p>
+        A hard stop is implemented on the Artemis: motors cut after 6 seconds regardless of BLE state. 
+      </p>
+    </section>
+
+    <!-- LAB TASKS -->
+    <section>
+      <h2>Lab Tasks</h2>
+
+      <!-- P/I/D Discussion -->
+      <div class="task">
+        <h3>Controller Design and Gain Selection</h3>
+
+        <p>
+          I used a PD controller. P-only caused overshoot of course, going past 304mm, so adding a D term dampened the approach, resisting rapid changes in error. No I term was needed since we're not really working with big distances, and integrator windup is a headache.
+        </p>
+
+        <p>
+          With a setpoint of 304mm and starting distance ~1000mm, the initial error is ~700mm. At Kp=0.07, that maps to a PWM of ~49 because that's as high as it would go without crashing into the wall. Kd=0.01 was chosen small enough to avoid derivative noise amplification, which constantly caused twitching at higher values.
+        </p>
+
+        <p>
+          Final gains: <b>Kp&nbsp;=&nbsp;0.07</b>, <b>Ki&nbsp;=&nbsp;0.0</b>, <b>Kd&nbsp;=&nbsp;0.01</b>.
+        </p>
+
+        <p>
+          A deadband tolerance based on lab 4 was added to prevent the motor deadbanding at low PWM values:
+        </p>
+
+        <pre><code>if (abs(pid_error) < POSITION_TOLERANCE) {
+    stop_motors();
+} else {
+    drive(motor_cmd);
+}</code></pre>
+      </div>
+
+      <!-- Range / Sampling -->
+      <div class="task">
+        <h3>Sensor Range and Sampling Time</h3>
+
+        <p>
+          The VL53L1X was configured in long distance mode with a 33ms timing budget, giving ~31Hz sensor updates. Long mode was chosen to support starting distances up to 4m. The PID loop runs non-blocking at ~98Hz — about 3.2x faster than the sensor — which is what makes extrapolation useful.
+        </p>
+      </div>
+
+      <!-- Main Results -->
+      <div class="task">
+        <h3>Position Control Results</h3>
+
+        <p>
+          Starting with P-only at Kp=0.1, the robot approached but overshot and oscillated. Adding Kd=0.01 dampened the overshoot. The derivative was kept small to avoid noise amplification — higher Kd values caused rapid twitching from sensor jitter. A low-pass filter on the derivative branch would allow higher Kd values in future iterations.
+        </p>
+
+        <div class="figure">
+          <img src="./lab5_pid_plot.png" alt="ToF distance, motor PWM, and PID terms vs time" />
+          <div class="caption">Figure: Top — ToF distance vs time. Blue dots are raw sensor readings, orange is the extrapolated estimate, red dashed is the 304mm setpoint. Middle — motor PWM. Bottom — P and D term contributions. The large D spike at t=0 is derivative kick from the initial error step; this was mitigated in later runs by seeding prev_error with the first real ToF reading.</div>
+        </div>
+
+        <p>
+          The maximum approach speed was approximately 1585&nbsp;mm/s (1.59&nbsp;m/s). The PID loop ran at ~98Hz while the ToF updated at ~31Hz, an extrapolation factor of 3.2×.
+        </p>
+      </div>
+
+      <!-- Videos -->
+      <div class="task">
+        <h3>Demonstration</h3>
+
+        <p>Five trials across different starting distances and two floor surfaces (tile and carpet):</p>
+
+        <div class="video-container">
+          <iframe
+            width="560" height="315"
+            src="https://www.youtube.com/embed/W9jBFwMJ-NE?si=nNMLBB_qkAUCXuBI&start=9"
+            title="YouTube video player"
+            frameborder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin"
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption">Video: Five repeated trials from varying distances on tile and carpet. The robot consistently stops near 304mm and returns to setpoint when pushed.</p>
+     
+        <div class="video-container">
+          <iframe
+            width="560" height="315" 
+            src="https://www.youtube.com/embed/P6qM29elLNo?si=ZY9b5kD1-13HmrIW" 
+            title="YouTube video player" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+            referrerpolicy="strict-origin-when-cross-origin" 
+            allowfullscreen>
+          </iframe>
+        </div>
+        <p class="caption">Video: Robot returning to set point when lightly kicked (I hope you like my fuzzy socks).</p>
+      
+      
+      
+      </div>
+
+      <!-- Extrapolation -->
+      <div class="task">
+        <h3>Linear Extrapolation</h3>
+
+        <p>
+          The ToF sensor updates at ~31Hz but the PID loop runs at ~98Hz. Without extrapolation, the controller reuses stale data for most iterations. The extrapolator computes a slope from the last two readings and projects forward:
+        </p>
+
+        <pre><code>float slope = (float)(tof_reading_2 - tof_reading_1)
+            / (float)(tof_time_2 - tof_time_1);
+int estimated = tof_reading_2
+              + (int)(slope * (float)(now - tof_time_2));</code></pre>
+
+        <p>
+          This gives the controller a best-guess distance between sensor samples, allowing smoother and faster response without waiting for new data. The PID ran 3.2× faster than the sensor with extrapolation enabled.
+        </p>
+
+        <div class="figure">
+          <img src="./lab5_extrapolation_comparison.png" alt="Raw vs extrapolated ToF data" />
+          <div class="caption">Figure: Raw ToF readings (dots) vs extrapolated estimates (line). The extrapolated values fill in gaps between sensor updates, giving the controller 3.2× more data points to work with.</div>
+        </div>
+        <p>
+          Collaborations: AI was used to debug the code along the process. Past year's compared to track progress and decide on workflow. 
+        </p>
+      </div>
+      
+    </section>
+
+  </div>
+</body>
+</html>
