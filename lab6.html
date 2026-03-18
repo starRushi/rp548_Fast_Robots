@@ -129,7 +129,7 @@ SET_ORI_GAINS,     // 22
 SET_ORI_SETPOINT,  // 23</code></pre>
 
       <p>
-        A hard stop cuts motors after 6 seconds to keep it from flipping out. 
+        A hard stop cuts motors after 10 seconds to keep it from flipping out & escaping. 
       </p>
     </section>
 
@@ -181,7 +181,7 @@ float d_term = -ori_Kd * ori_deriv_filtered;</code></pre>
         <h3>Results</h3>
 
         <p>
-          With P-only at Kp=2.0 the robot overshot to ~100° from a 90° setpoint. Adding Kd=0.5 eliminated the overshoot and the robot settled cleanly at the target. The controller also held position when pushed, returning to setpoint after external perturbation like last lab.
+          With P-only at Kp=2.0 the robot overshot to ~100° from a 90° setpoint. Adding Kd=0.01 eliminated the overshoot and the robot settled cleanly at the target. The controller also held position when pushed, returning to setpoint after external perturbation like last lab.
         </p>
 
         <div class="figure">
@@ -193,7 +193,7 @@ float d_term = -ori_Kd * ori_deriv_filtered;</code></pre>
       <div class="task">
         <h3>Demonstration</h3>
 
-        <p>Three trials aiming for 90 deg including setpoint changes and perturbation recovery on two floors: </p>
+        <p>Three trials aiming for 90 deg including setpoint changes and perturbation recovery: </p>
 
         <div class="video-container">
           <iframe
