@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lab 7: Kalman Filter</title>
+  <style>
+    :root{
+      --text:#111;
+      --muted:#555;
+      --rule:#d8d8d8;
+      --bg:#ffffff;
+      --codebg:#f6f6f6;
+      --link:#0b3d91;
+      --maxw: 860px;
+    }
+    html,body{ background:var(--bg); color:var(--text); }
+    body{
+      margin:0;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 2.0;
+      font-size: 18px;
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 48px 28px 72px; }
+    header{ border-bottom:1px solid var(--rule); padding-bottom: 18px; margin-bottom: 26px; }
+    .crumbs{ font-size: 16px; color: var(--muted); }
+    .crumbs a{ color: var(--link); text-decoration: none; }
+    .crumbs a:hover{ text-decoration: underline; }
+    h1{ font-size: 28px; margin: 6px 0 0; line-height: 1.4; }
+    .meta{ color: var(--muted); font-size: 16px; margin-top: 6px; }
+    h2{ font-size: 22px; margin: 34px 0 8px; }
+    h3{ font-size: 19px; margin: 26px 0 6px; }
+    p{ margin: 10px 0; }
+    ul{ margin: 10px 0 10px 26px; }
+    li{ margin: 6px 0; }
+    hr{ border:0; border-top:1px solid var(--rule); margin: 26px 0; }
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    pre{
+      background: var(--codebg);
+      border:1px solid var(--rule);
+      padding: 12px 14px;
+      overflow:auto;
+      margin: 12px 0;
+    }
+    .figure{
+      border:1px solid var(--rule);
+      padding: 10px;
+      background:#fff;
+      margin: 12px 0;
+    }
+    .figure img{
+      max-width:100%;
+      display:block;
+      margin: 0 auto;
+    }
+    .caption{
+      color: var(--muted);
+      font-size: 15px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .task{
+      border-top:1px solid var(--rule);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    .small{ font-size:16px; color:var(--muted); }
+    .video-container{
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border:1px solid var(--rule);
+      background:#fff;
+      margin: 12px 0;
+    }
+    .video-container iframe{
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+    @media (max-width: 760px){
+      body{ font-size: 17px; }
+      .wrap{ padding: 36px 18px 60px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="crumbs">
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 7</span>
+      </div>
+      <h1>Lab 7: Kalman Filter</h1>
+      <div class="meta">
+        <span>Board: SparkFun RedBoard Artemis Nano</span> ·
+        <span>Sensor: VL53L1X ToF</span> ·
+        <span>Filter: Kalman (predict/update)</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>1. Estimate Drag and Momentum</h2>
+
+      <div class="task">
+        <h3>Step Response</h3>
+        <p>
+          I drove the robot at constant PWM of 150 toward a wall while logging ToF distance. The robot logs for up to 5 seconds with a safety stop if it gets too close.
+        </p>
+
+        <pre><code>void run_step_response() {
+    unsigned long now = millis();
+    if ((now - step_start_time) > 5000) {
+        step_running = false;
+        stop_motors();
+        return;
+    }
+    if (tof_sensor.checkForDataReady()) {
+        float dist = tof_sensor.getDistance();
+        tof_sensor.clearInterrupt();
+        tof_sensor.stopRanging();
+        tof_sensor.startRanging();
+        if (dist < 150) { step_running = false; stop_motors(); return; }
+        if (data_count < MAX_DATA_POINTS) {
+            log_time[data_count] = now - step_start_time;
+            log_tof[data_count]  = dist;
+            log_pwm[data_count]  = step_pwm_value;
+            data_count++;
+        }
+    }
+    drive_straight(step_pwm_value);
+}</code></pre>
+
+        <div class="figure">
+          <img src="./lab7_step_response.png" alt="Step response data" />
+          <div class="caption">Figure: Step response. Top: ToF distance. Middle: computed speed (raw + smoothed). Bottom: motor input at constant 150 PWM.</div>
+        </div>
+
+        <div class="video-container">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/sF9KwcXCVNw?si=CtPcumd55XEpDjFJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <p class="caption">Video: Step response experiment.</p>
+      </div>
+
+      <div class="task">
+        <h3>Computing d and m</h3>
+        <p>
+          I computed velocity from the ToF data using finite differences. The early readings had huge noise spikes so the automated rise time detection gave me 0.039s which is way too fast; I just eyeballed it from the distance plot at about 0.3s instead. Steady state speed came out to 2443 mm/s which is around 8 ft/s.
+        </p>
+
+        <pre><code>velocity = -np.diff(tof) / np.diff(times_s)
+steady_state_speed = np.mean(vel_smooth[-n_last:])
+d = 1.0 / steady_state_speed
+m = -d * t_rise / np.log(1.0 - rise_fraction)</code></pre>
+
+        <p>
+          Final values: <b>d = 0.000409</b>, <b>m = 0.0000533</b>. I saved these to a JSON file so I could keep them after resetting the kernel.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Initialize KF (Python)</h2>
+
+      <div class="task">
+        <h3>Matrices and Noise</h3>
+        <p>
+          The state is [position, velocity]. The physics model comes from F = u - d*v. C is [-1, 0] because the ToF reads positive distance but position decreases as the robot goes toward the wall. Discretized with Ad = I + dt*A and Bd = dt*B.
+        </p>
+
+        <pre><code>A = np.array([[0, 1], [0, -d/m]])
+B = np.array([[0], [1/m]])
+C = np.array([[-1, 0]])
+Ad = np.eye(2) + Delta_T * A
+Bd = Delta_T * B</code></pre>
+
+        <p>
+          Sensor noise is sigma_z = 20mm from the ToF datasheet; process noise started at sigma_1 = sigma_2 = 10. Bigger process noise means less trust in the model, bigger sensor noise means less trust in the ToF. Initialized state with first ToF reading and zero velocity.
+        </p>
+
+        <pre><code>Sigma_u = np.array([[10**2, 0], [0, 10**2]])
+Sigma_z = np.array([[20**2]])
+x = np.array([[-TOF[0]], [0]])
+sigma = np.array([[100, 0], [0, 100]])</code></pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. KF Sanity Check in Python</h2>
+
+      <div class="task">
+        <h3>Running the Filter</h3>
+        <p>
+          I ran the KF function from the lecture slides on my Lab 5 data to check it before putting it on the robot; the input gets normalized by dividing PWM by the step size.
+        </p>
+
+        <pre><code>def kf(mu, sigma, u, y):
+    mu_p = Ad.dot(mu) + Bd.dot(u)
+    sigma_p = Ad.dot(sigma.dot(Ad.T)) + Sigma_u
+    sigma_m = C.dot(sigma_p.dot(C.T)) + Sigma_z
+    kkf_gain = sigma_p.dot(C.T.dot(np.linalg.inv(sigma_m)))
+    y_m = y - C.dot(mu_p)
+    mu = mu_p + kkf_gain.dot(y_m)
+    sigma = (np.eye(2) - kkf_gain.dot(C)).dot(sigma_p)
+    return mu, sigma</code></pre>
+
+        <div class="figure">
+          <img src="./lab7_kf_python_test.png" alt="KF estimate vs raw ToF" />
+          <div class="caption">Figure: KF estimate (red) vs raw ToF (blue dots) on Lab 5 data.</div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Tuning Sigmas</h3>
+        <p>
+          I tried four sigma combos. Small process noise (5,5) trusts the model more so the line is smoother but slower to react. Large process noise (50,50) basically passes the raw data through. Small sensor noise (sigma_z=5) snaps to every reading. Balanced (10,10,20) gave the best tradeoff so I went with that.
+        </p>
+
+        <div class="figure">
+          <img src="./lab7_kf_tuning.png" alt="Sigma tuning comparison" />
+          <div class="caption">Figure: Four sigma configurations compared. Green (balanced) was chosen.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. KF on the Robot</h2>
+
+      <div class="task">
+        <h3>Implementation</h3>
+        <p>
+          The KF was added to my Lab 5 PID code using the BasicLinearAlgebra library. Predict runs every loop iteration (~1ms) but update only fires when the ToF has a new reading (~50-100ms); between readings the robot runs on the model alone. That is the whole point of doing this.
+        </p>
+
+        <pre><code>void kf_predict(float u_normalized) {
+    Matrix<1,1> u_mat = { u_normalized };
+    mu = Ad * mu + Bd * u_mat;
+    Sigma_state = Ad * Sigma_state * ~Ad + Sigma_u;
+}
+
+void kf_update(float tof_reading) {
+    Matrix<1,1> y_mat = { tof_reading };
+    Matrix<1,1> y_m = y_mat - C_mat * mu;
+    Matrix<1,1> S = C_mat * Sigma_state * ~C_mat + Sigma_z_mat;
+    Matrix<1,1> S_inv = { 1.0 / S(0,0) };
+    Matrix<2,1> K = Sigma_state * ~C_mat * S_inv;
+    mu = mu + K * y_m;
+    Sigma_state = (I2 - K * C_mat) * Sigma_state;
+}</code></pre>
+
+        <p>
+          Ad and Bd get recomputed each loop with actual dt so timing jitter doesn't mess things up. PID reads KF estimated distance instead of waiting for the next ToF reading.
+        </p>
+
+        <pre><code>// In main loop:
+Ad(0,1) = dt_actual;
+Ad(1,1) = 1.0 - dt_actual * kf_drag / kf_momentum;
+Bd(1,0) = dt_actual / kf_momentum;
+
+kf_predict(motor_pwm / kf_step_size);
+if (tof_sensor.checkForDataReady()) {
+    kf_update(tof_sensor.getDistance());
+}
+kf_distance = -mu(0,0);
+motor_pwm = compute_pid(kf_distance);</code></pre>
+      </div>
+
+      <div class="task">
+        <h3>Verification</h3>
+        <p>
+          I ran the KF at Lab 5 speed first to make sure it was working. The plot shows the KF line is smooth and continuous while the ToF dots are sparse. The filter fills in gaps between sensor readings correctly.
+        </p>
+
+        <div class="figure">
+          <img src="./lab7_robot_kf_vs_tof.png" alt="Robot KF vs raw ToF" />
+          <div class="caption">Figure: Raw ToF (blue) vs KF estimate (red) running on the Artemis.</div>
+        </div>
+
+        <div class="video-container">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/sF9KwcXCVNw?si=CtPcumd55XEpDjFJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <p class="caption">Video: KF + PID verification run.</p>
+      </div>
+
+      <div class="task">
+        <h3>Stopping at 1 Foot</h3>
+
+        <div class="video-container">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/sF9KwcXCVNw?si=CtPcumd55XEpDjFJ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <p class="caption">Video: Robot stopping 1ft from wall using KF + PID.</p>
+
+        <div class="figure">
+          <img src="./lab7_final_run.png" alt="Final run data" />
+          <div class="caption">Figure: Final run showing ToF, KF distance, KF velocity, and PWM.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Discussion</h2>
+      <p>
+        Without the KF the PID loop was stuck at the ToF update rate of 50-100ms. With the KF it runs every millisecond or so. The d and m values don't need to be super precise; the sigma tuning picks up the slack. I found this out when the automated rise time gave me garbage and I just estimated from the plot instead. The filter still worked fine. The sigmas are what actually matter for getting good performance.
+      </p>
+    </section>
+
+    <section>
+      <h2>Collaborations</h2>
+      <p>
+      </p>
+    </section>
+
+  </div>
+</body>
+</html>
