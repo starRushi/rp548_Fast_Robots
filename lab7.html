@@ -272,11 +272,6 @@ motor_pwm = compute_pid(kf_distance);</code></pre>
           I ran the KF at Lab 5 speed first to make sure it was working. The plot shows the KF line is smooth and continuous while the ToF dots are sparse. The filter fills in gaps between sensor readings correctly.
         </p>
 
-        <div class="figure">
-          <img src="./lab7_robot_kf_vs_tof.png" alt="Robot KF vs raw ToF" />
-          <div class="caption">Figure: Raw ToF (blue) vs KF estimate (red) running on the Artemis.</div>
-        </div>
-
       <div class="task">
         <h3>Stopping at 1 Foot</h3>
 
@@ -286,8 +281,8 @@ motor_pwm = compute_pid(kf_distance);</code></pre>
         <p class="caption">Video: Robot stopping 1ft from wall using KF + PID.</p>
 
         <div class="figure">
-          <img src="./lab7_final_run.png" alt="Final run data" />
-          <div class="caption">Figure: Final run showing ToF, KF distance, KF velocity, and PWM.</div>
+          <img src="./lab7_robot_kf_vs_tof.png.png" alt="Final run data" />
+          <div class="caption">Figure: Final run showing ToF, KF distance, KF velocity, and PWM. Note the Raw ToF (blue) vs KF estimate (red) running on the Artemis.</div>
         </div>
       </div>
     </section>
