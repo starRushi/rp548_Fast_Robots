@@ -146,7 +146,7 @@
       <div class="task">
         <h3>Computing d and m</h3>
         <p>
-          I computed velocity from the ToF data using finite differences. The early readings had huge noise spikes so the automated rise time detection gave me 0.039s which is way too fast; I just eyeballed it from the distance plot at about 0.3s instead. Steady state speed came out to 2443 mm/s which is around 8 ft/s.
+          I computed velocity from the ToF data using finite differences. The early readings had quite huge noise spikes so the automated rise time detection gave me 0.039s which is way too fast; I aproximated visually from the distance plot that it was 0.3s instead. Steady state speed came out to 2443 mm/s which is around 8 ft/s.
         </p>
 
         <pre><code>velocity = -np.diff(tof) / np.diff(times_s)
@@ -155,7 +155,7 @@ d = 1.0 / steady_state_speed
 m = -d * t_rise / np.log(1.0 - rise_fraction)</code></pre>
 
         <p>
-          Final values: <b>d = 0.000409</b>, <b>m = 0.0000533</b>. I saved these to a JSON file so I could keep them after resetting the kernel.
+          Final values: <b>d = 0.000409</b>, <b>m = 0.0000533</b>. I saved these to a JSON file so I could keep them after resetting the kernel because I'm slightly paranoid of losing them. 
         </p>
       </div>
     </section>
@@ -176,7 +176,7 @@ Ad = np.eye(2) + Delta_T * A
 Bd = Delta_T * B</code></pre>
 
         <p>
-          Sensor noise is sigma_z = 20mm from the ToF datasheet; process noise started at sigma_1 = sigma_2 = 10. Bigger process noise means less trust in the model, bigger sensor noise means less trust in the ToF. Initialized state with first ToF reading and zero velocity.
+          Sensor noise is sigma_z = 20mm from the ToF datasheet; process noise started at sigma_1 = sigma_2 = 10. Bigger process noise means less trust in the model, bigger sensor noise means less trust in the ToF. Initialized state with first ToF reading and zero vel.
         </p>
 
         <pre><code>Sigma_u = np.array([[10**2, 0], [0, 10**2]])
@@ -230,7 +230,7 @@ sigma = np.array([[100, 0], [0, 100]])</code></pre>
       <div class="task">
         <h3>Implementation</h3>
         <p>
-          The KF was added to my Lab 5 PID code using the BasicLinearAlgebra library. Predict runs every loop iteration (~1ms) but update only fires when the ToF has a new reading (~50-100ms); between readings the robot runs on the model alone. That is the whole point of doing this.
+          The KF was added to my Lab 5 PID code using the BasicLinearAlgebra library. Predict runs every loop iteration (~1ms) but update only fires when the ToF has a new reading (~50-100ms); between readings the robot runs on the model alone. Which notably is the whole point of doing this.
         </p>
 
         <pre><code>void kf_predict(float u_normalized) {
@@ -281,7 +281,7 @@ motor_pwm = compute_pid(kf_distance);</code></pre>
         <p class="caption">Video: Robot stopping 1ft from wall using KF + PID.</p>
 
         <div class="figure">
-          <img src="./lab7_robot_kf_vs_tof.png.png" alt="Final run data" />
+          <img src="./lab7_robot_kf_vs_tof.png" alt="Final run data" />
           <div class="caption">Figure: Final run showing ToF, KF distance, KF velocity, and PWM. Note the Raw ToF (blue) vs KF estimate (red) running on the Artemis.</div>
         </div>
       </div>
@@ -290,7 +290,7 @@ motor_pwm = compute_pid(kf_distance);</code></pre>
     <section>
       <h2>Discussion</h2>
       <p>
-        Without the KF the PID loop was stuck at the ToF update rate of 50-100ms. With the KF it runs every millisecond or so. The d and m values don't need to be super precise; the sigma tuning picks up the slack. I found this out when the automated rise time gave me garbage and I just estimated from the plot instead. The filter still worked fine. The sigmas are what actually matter for getting good performance.
+        Without the KF the PID loop was stuck at the ToF update rate of 50-100ms. With the KF it runs every millisecond or so which is way better. The d and m values don't need to be super precise; the sigma tuning picks up the slack, which I found while fighting the automatic risetime. The filter still worked fine. The sigmas are what actually matter for getting good performance.
       </p>
     </section>
 
