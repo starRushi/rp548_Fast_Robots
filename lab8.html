@@ -170,9 +170,7 @@ float pid_out = speed_Kp * speed_error
               + speed_Kd * speed_deriv;
 motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
 
-        <p>
-          Final speed gains: <b>Kp&nbsp;=&nbsp;TODO</b>, <b>Ki&nbsp;=&nbsp;TODO</b>, <b>Kd&nbsp;=&nbsp;TODO</b>, target speed <b>TODO mm/s</b>.
-        </p>
+
       </div>
 
       <div class="task">
@@ -188,7 +186,7 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
         <h3>Task B: Drift</h3>
 
         <p>
-          For the drift, the orientation PID from Lab 6 is reused inside the TURNING phase. When the KF distance drops below the trigger threshold, the current yaw is captured and the setpoint is set to <code>yaw + 180</code>. The PD controller then spins the robot in place until the error drops inside the tolerance, and then RETURN takes over.
+          For the drift, the orientation PID from Lab 6 is reused inside the turning phase. When the KF distance drops below the trigger threshold, the current yaw is captured and the setpoint is set to <code>yaw + 180</code>. The PD controller then spins the robot in place until the error drops inside the tolerance, and then return takes over.
         </p>
 
         <pre><code>void run_drift_turn() {
@@ -238,7 +236,7 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
 
         <div class="figure">
           <img src="./lab8_kf_dist_plot.png" alt="ToF and KF distance vs time" />
-          <div class="caption">Figure: Top &mdash; raw ToF (dots) and KF estimated distance (line) vs time. The vertical dashed line marks the moment the trigger fires and the state machine transitions out of APPROACH. Bottom &mdash; KF velocity estimate, showing the speed PID holding ~TODO mm/s through the approach.</div>
+          <div class="caption">Figure: Top &mdash; raw ToF (dots) and KF estimated distance (line) vs time. The vertical dashed line marks the moment the trigger fires and the state machine transitions out of APPROACH. Bottom &mdash; KF velocity estimate, showing the speed PID holding through the approach.</div>
         </div>
 
         <div class="figure">
@@ -246,9 +244,6 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
           <div class="caption">Figure: Motor PWM over time, color-coded by state. APPROACH holds steady positive PWM, then drops to a spin command during TURNING, then ramps back up to return PWM. Yaw trace overlaid shows the full 180° rotation.</div>
         </div>
 
-        <p>
-          Time from trigger line to crossing back over the start line: <b>[] seconds</b> on the best run.
-        </p>
       </div>
 
       <div class="task">
@@ -261,11 +256,11 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
         </div>
         <p class="caption">Video: Three successful stunt runs.</p>
 
-        <div class="video-container">
+       <!-- <div class="video-container">
           <iframe src="https://www.youtube.com/embed/TODO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <p class="caption">Video: Bloopers / failed runs (for the blooper vote, pleaseee).</p>
-      </div>
+      </div> --->
 
       <p>
         Collaborations: Claude for debuging the state machine design, code structure, and making into HTML. GPT for conceptual aid. 
