@@ -221,9 +221,10 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
         <ul>
           <li>Started with conservative approach speed (~1500 mm/s) and a high trigger distance to make sure nothing crashed on run 1.</li>
           <li>Bumped target speed up gradually until the approach looked aggressive but the robot still hit the trigger reliably.</li>
-          <li>Pulled the trigger distance down step by step until the timing of the flip/turn lined up with the geometry the lab asked for.</li>
-          <li>Adjusted the flip hold duration / orientation Kp to make the maneuver actually complete cleanly.</li>
+          <li>Pulled the trigger distance down step by step until the timing of the turn lined up with the geometry the lab asked for.</li>
+          <li>Adjusted the orientation Kp to make the maneuver actually complete cleanly.</li>
           <li>Caused a bunch of bloopers along the way of increasingly strange variety.</li>
+          <li>Also some of the runs are without PID, even though I did make and use it. It helped me get very clean runs but often broke.</li>
         </ul>
       </div>
 
