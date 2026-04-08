@@ -244,6 +244,9 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
           <div class="caption">Figure: Motor PWM over time, color-coded by state. APPROACH holds steady positive PWM, then drops to a spin command during TURNING, then ramps back up to return PWM. Yaw trace overlaid shows the full 180° rotation.</div>
         </div>
 
+        <p>
+          The approach phase was really fast, according to data I received back on bluetooth, the KF triggered the turn at 940mm (right around the 914mm/3ft target) after only 0.58s from the start command, with a peak KF velocity of 4132 mm/s (~4.1 m/s). The turn started at 0.58s and went for about a second. The yaw at the moment of return was 212°, which matches the fact that I bumped the yaw setpoint up to 210° to overshoot slightly and account for the robot not quite hitting exactly 180°. Total runtime was 3 seconds, which is honestly in time with the ~3–4.5s that the previous years' reports reference.
+        </p>
       </div>
 
       <div class="task">
@@ -252,18 +255,18 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
         <p>Three successful runs:</p>
 
         <div class="video-container">
-          <iframe src="https://www.youtube.com/embed/TODO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/TFlC8whnFN4?si=x37BKbNIZLLgK7g5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <p class="caption">Video: Three successful stunt runs.</p>
 
-       <!-- <div class="video-container">
-          <iframe src="https://www.youtube.com/embed/TODO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+<div class="video-container">
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/CGYcwR45rtw?si=X9mcjHYfOFWFQL67" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
-        <p class="caption">Video: Bloopers / failed runs (for the blooper vote, pleaseee).</p>
-      </div> --->
+        <p class="caption">Video: Bloopers where my robot randomly spasms for no apprent reason?! I swear I was trying to do the normal lab when this happened. And then it never happened again</p>
+      </div> 
 
       <p>
-        Collaborations: Claude for debuging the state machine design, code structure, and making into HTML. GPT for conceptual aid. 
+        Collaborations: Claude for debuging the state machine design, code structure, and making into HTML. GPT for conceptual aid. Looked at past reports from Brooke Hudson and Aravind Rameswami
       </p>
     </section>
 
