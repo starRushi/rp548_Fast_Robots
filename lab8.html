@@ -225,9 +225,14 @@ motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
           <li>Adjusted the orientation Kp to make the maneuver actually complete cleanly.</li>
           <li>Caused a bunch of bloopers along the way of increasingly strange variety.</li>
           <li>Also some of the runs are without PID, even though I did make and use it. It helped me get very clean runs but often broke.</li>
+          <li>Oh! And the discrete Ad and Bd matrices are recomputed each loop iteration using the actual measured dt, so the KF stays consistent even when loop timing varies.<li>
         </ul>
-      </div>
 
+      </p> Final PID Values: SPEED_KP = 0.15, SPEED_KI = 0.005, SPEED_KD = 0.1
+      </div>
+        
+
+      
       <div class="task">
         <h3>Results</h3>
 
