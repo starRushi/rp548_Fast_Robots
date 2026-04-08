@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lab 8: Stunts!</title>
+  <style>
+    :root{
+      --text:#111;
+      --muted:#555;
+      --rule:#d8d8d8;
+      --bg:#ffffff;
+      --codebg:#f6f6f6;
+      --link:#0b3d91;
+      --maxw: 860px;
+    }
+    html,body{ background:var(--bg); color:var(--text); }
+    body{
+      margin:0;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 2.0;
+      font-size: 18px;
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 48px 28px 72px; }
+    header{ border-bottom:1px solid var(--rule); padding-bottom: 18px; margin-bottom: 26px; }
+    .crumbs{ font-size: 16px; color: var(--muted); }
+    .crumbs a{ color: var(--link); text-decoration: none; }
+    .crumbs a:hover{ text-decoration: underline; }
+    h1{ font-size: 28px; margin: 6px 0 0; line-height: 1.4; }
+    .meta{ color: var(--muted); font-size: 16px; margin-top: 6px; }
+    h2{ font-size: 22px; margin: 34px 0 8px; }
+    h3{ font-size: 19px; margin: 26px 0 6px; }
+    p{ margin: 10px 0; }
+    ul{ margin: 10px 0 10px 26px; }
+    li{ margin: 6px 0; }
+    hr{ border:0; border-top:1px solid var(--rule); margin: 26px 0; }
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    pre{
+      background: var(--codebg);
+      border:1px solid var(--rule);
+      padding: 12px 14px;
+      overflow:auto;
+      margin: 12px 0;
+    }
+    .figure{
+      border:1px solid var(--rule);
+      padding: 10px;
+      background:#fff;
+      margin: 12px 0;
+    }
+    .figure img{
+      max-width:100%;
+      display:block;
+      margin: 0 auto;
+    }
+    .caption{
+      color: var(--muted);
+      font-size: 15px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .task{
+      border-top:1px solid var(--rule);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    .small{ font-size:16px; color:var(--muted); }
+    @media (max-width: 760px){
+      body{ font-size: 17px; }
+      .wrap{ padding: 36px 18px 60px; }
+    }
+    .video-container{
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border:1px solid var(--rule);
+      background:#fff;
+      margin: 12px 0;
+    }
+    .video-container iframe{
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="crumbs">
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 8</span>
+      </div>
+      <h1>Lab 8: Stunts!</h1>
+      <div class="meta">
+        <span>Board: SparkFun RedBoard Artemis Nano</span> ·
+        <span>Sensors: VL53L1X ToF, ICM-20948 IMU</span> ·
+        <span>Task B: Drift</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>
+        This lab combines pretty much everything from previous labs (motors, ToF, IMU, BLE, PID, KF) into a single fast stunt. For Task B, the robot starts behind a line less than 4m from a wall, drives toward it at high speed, and once within 3ft (914mm) initiates a 180° drift turn before driving back past the start. I also added a speed PID on top of the KF velocity estimate for the optional extra credit, so the approach speed stays consistent regardless of battery level or surface.
+      </p>
+    </section>
+
+    <section>
+      <h2>Prelab: Stunt State Machine</h2>
+
+      <h3>BLE Commands</h3>
+      <p>
+        Eight new commands were added on top of the Lab 7 set, starting at index 32. The Artemis logs time, raw ToF, KF distance, KF velocity, motor PWM, yaw, and the current stunt phase every loop iteration, then streams them back after the run.
+      </p>
+
+      <pre><code>// Lab 8 commands
+START_STUNT,         // 32  arg: 0=flip, 1=drift
+STOP_STUNT,          // 33
+SET_FLIP_PARAMS,     // 34  trigger_dist | reverse_pwm | duration_ms
+SET_DRIFT_PARAMS,    // 35  trigger_dist | turn_angle
+SET_SPEED_GAINS,     // 36  Kp | Ki | Kd
+SET_APPROACH,        // 37  target_speed | max_pwm | use_speed_pid
+SET_RETURN,          // 38  return_pwm | return_duration | timeout
+SEND_STUNT_DATA,     // 39</code></pre>
+
+      <h3>State Machine</h3>
+      <p>
+        The stunt is made as a small state machine to keep each phase isolated and easy to tune. Each loop, the KF predict/update runs, the IMU is read for yaw, then the current phase function is dispatched.
+      </p>
+
+      <pre><code>enum StuntState {
+    STUNT_IDLE         = 0,
+    STUNT_APPROACH     = 1,  // drive at speed toward wall
+    STUNT_FLIP_TRIGGER = 2,  // slam reverse for flip
+    STUNT_TURNING      = 3,  // 180 deg yaw turn for drift
+    STUNT_RETURN       = 4,  // drive back past start
+    STUNT_DONE         = 5
+};</code></pre>
+
+      <p>
+        It stops after 8 seconds automtically and has a kill switch if it goes rogue. 
+      </p>
+    </section>
+
+    <section>
+      <h2>Lab Tasks</h2>
+
+      <div class="task">
+        <h3>Approach Phase &mdash; Speed PID (Extra Credit)</h3>
+
+        <p>
+          During approach, instead of just a constant PWM, a speed PID uses the KF velocity estimate as feedback to track a target speed (mm/s). This means a slightly drained battery doesn't make the robot trigger late, and tile vs. carpet doesn't really change the behavior. The output is clamped between the deadband and a max PWM cap so the integrator can't wind up forever also.
+        </p>
+
+        <pre><code>float speed_error = approach_speed - kf_velocity;
+speed_integral   += speed_error * dt;
+speed_integral    = constrain(speed_integral, -2000.0, 2000.0);
+float speed_deriv = (speed_error - speed_prev_err) / dt;
+
+float pid_out = speed_Kp * speed_error
+              + speed_Ki * speed_integral
+              + speed_Kd * speed_deriv;
+motor_pwm = constrain(pid_out, (float)DEADBAND, approach_pwm_max);</code></pre>
+
+        <p>
+          Final speed gains: <b>Kp&nbsp;=&nbsp;TODO</b>, <b>Ki&nbsp;=&nbsp;TODO</b>, <b>Kd&nbsp;=&nbsp;TODO</b>, target speed <b>TODO mm/s</b>.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Kalman Filter Reuse</h3>
+
+        <p>
+          The KF from Lab 7 was reused as-is. Predict runs every loop using the current motor PWM (normalized by step size) as input, and update only runs when the ToF actually has a fresh reading. This is what lets the controller make decisions at ~100Hz instead of being stuck at the ~50Hz ToF rate, which matters a lot when you're driving fast and need to trigger the turn at exactly the right distance.
+        </p>
+
+      </div>
+
+      <div class="task">
+        <h3>Task B: Drift</h3>
+
+        <p>
+          For the drift, the orientation PID from Lab 6 is reused inside the TURNING phase. When the KF distance drops below the trigger threshold, the current yaw is captured and the setpoint is set to <code>yaw + 180</code>. The PD controller then spins the robot in place until the error drops inside the tolerance, and then RETURN takes over.
+        </p>
+
+        <pre><code>void run_drift_turn() {
+    ori_error = ori_setpoint - yaw;
+    while (ori_error >  180.0) ori_error -= 360.0;
+    while (ori_error < -180.0) ori_error += 360.0;
+
+    if (abs(ori_error) < ORI_TOLERANCE) {
+        stunt_state = STUNT_RETURN;
+        stunt_phase_start = millis();
+        drive_straight(return_pwm);
+        return;
+    }
+    ori_deriv_filtered = ORI_DERIV_ALPHA * current_gyro_z
+                       + (1.0 - ORI_DERIV_ALPHA) * ori_deriv_filtered;
+    float p_term = ori_Kp * ori_error;
+    float d_term = -ori_Kd * ori_deriv_filtered;
+    spin((int)constrain(p_term + d_term, -255.0, 255.0));
+}</code></pre>
+
+        <p>
+          The orientation Kp was bumped up from Lab 6 so the turn finishes fast enough to look like an actual drift instead of a slow twist in place.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Tuning Process</h3>
+
+        <p>
+          Tuning went roughly like this:
+        </p>
+        <ul>
+          <li>Started with conservative approach speed (~1500 mm/s) and a high trigger distance to make sure nothing crashed on run 1.</li>
+          <li>Bumped target speed up gradually until the approach looked aggressive but the robot still hit the trigger reliably.</li>
+          <li>Pulled the trigger distance down step by step until the timing of the flip/turn lined up with the geometry the lab asked for.</li>
+          <li>Adjusted the flip hold duration / orientation Kp to make the maneuver actually complete cleanly.</li>
+          <li>Caused approximately a bunch of bloopers along the way (see below).</li>
+        </ul>
+      </div>
+
+      <div class="task">
+        <h3>Results</h3>
+
+        <p>
+          The robot successfully completed the stunt at least three times. Plots from one of the cleaner runs:
+        </p>
+
+        <div class="figure">
+          <img src="./lab8_kf_dist_plot.png" alt="ToF and KF distance vs time" />
+          <div class="caption">Figure: Top &mdash; raw ToF (dots) and KF estimated distance (line) vs time. The vertical dashed line marks the moment the trigger fires and the state machine transitions out of APPROACH. Bottom &mdash; KF velocity estimate, showing the speed PID holding ~TODO mm/s through the approach.</div>
+        </div>
+
+        <div class="figure">
+          <img src="./lab8_pwm_state_plot.png" alt="Motor PWM and state vs time" />
+          <div class="caption">Figure: Motor PWM over time, color-coded by state. APPROACH holds steady positive PWM, then drops to a spin command during TURNING, then ramps back up to return PWM. Yaw trace overlaid shows the full 180° rotation.</div>
+        </div>
+
+        <p>
+          Time from trigger line to crossing back over the start line: <b>[] seconds</b> on the best run.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Demonstration</h3>
+
+        <p>Three successful runs:</p>
+
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/TODO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <p class="caption">Video: Three successful stunt runs.</p>
+
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/TODO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <p class="caption">Video: Bloopers / failed runs (for the blooper vote, pleaseee).</p>
+      </div>
+
+      <p>
+        Collaborations: Claude for debuging the state machine design, code structure, and making into HTML. GPT for conceptual aid. 
+      </p>
+    </section>
+
+  </div>
+</body>
+</html>
