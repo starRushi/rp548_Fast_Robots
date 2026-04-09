@@ -1,1 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lab 9: Mapping</title>
+  <style>
+    :root{
+      --text:#111;
+      --muted:#555;
+      --rule:#d8d8d8;
+      --bg:#ffffff;
+      --codebg:#f6f6f6;
+      --link:#0b3d91;
+      --maxw: 860px;
+    }
+    html,body{ background:var(--bg); color:var(--text); }
+    body{
+      margin:0;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 2.0;
+      font-size: 18px;
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 48px 28px 72px; }
+    header{ border-bottom:1px solid var(--rule); padding-bottom: 18px; margin-bottom: 26px; }
+    .crumbs{ font-size: 16px; color: var(--muted); }
+    .crumbs a{ color: var(--link); text-decoration: none; }
+    .crumbs a:hover{ text-decoration: underline; }
+    h1{ font-size: 28px; margin: 6px 0 0; line-height: 1.4; }
+    .meta{ color: var(--muted); font-size: 16px; margin-top: 6px; }
+    h2{ font-size: 22px; margin: 34px 0 8px; }
+    h3{ font-size: 19px; margin: 26px 0 6px; }
+    p{ margin: 10px 0; }
+    ul{ margin: 10px 0 10px 26px; }
+    li{ margin: 6px 0; }
+    hr{ border:0; border-top:1px solid var(--rule); margin: 26px 0; }
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    pre{
+      background: var(--codebg);
+      border:1px solid var(--rule);
+      padding: 12px 14px;
+      overflow:auto;
+      margin: 12px 0;
+    }
+    .figure{
+      border:1px solid var(--rule);
+      padding: 10px;
+      background:#fff;
+      margin: 12px 0;
+    }
+    .figure img{
+      max-width:100%;
+      display:block;
+      margin: 0 auto;
+    }
+    .caption{
+      color: var(--muted);
+      font-size: 15px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .task{
+      border-top:1px solid var(--rule);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    .small{ font-size:16px; color:var(--muted); }
+    @media (max-width: 760px){
+      body{ font-size: 17px; }
+      .wrap{ padding: 36px 18px 60px; }
+    }
+    .video-container{
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      border:1px solid var(--rule);
+      background:#fff;
+      margin: 12px 0;
+    }
+    .video-container iframe{
+      position:absolute;
+      top:0; left:0;
+      width:100%;
+      height:100%;
+      border:0;
+    }
+  </style>
+</head>
 
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="crumbs">
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 9</span>
+      </div>
+      <h1>Lab 9: Mapping</h1>
+      <div class="meta">
+        <span>Board: SparkFun RedBoard Artemis Nano</span> ·
+        <span>Sensors: VL53L1X ToF, ICM-20948 IMU</span> ·
+        <span>Control: Angular Speed PID (hybrid)</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>
+        For this lab the robot was placed at four marked positions around the lab front room, spun in place using closed-loop angular speed PID, and recorded ToF distance readings throughout. The readings were then transformed from each robot's local frame into the room's world frame and merged into a single scatter plot, from which I manually traced a line-based map of the room geometry for use in Lab 10.
+      </p>
+    </section>
+
+    <section>
+      <h2>Control Choice</h2>
+      <p>
+        I went with the angular speed PID option (7.5 point version) because the lab tile incrementing approach in orientation PID had issues with my <code>spin()</code> deadband mapping (any non-zero PID output got mapped through <code>SPIN_DEADBAND</code>, making the controller jump like crazy), and angular speed PID gave me more reliable small motions since I could control anticipating the motion (feedforward) right at the deadband threshold.
+      </p>
+
+      <pre><code>// Angular speed PID with anticp. bias
+float omega_error = MAP_TARGET_OMEGA - map_gyro_filtered;
+map_omega_integral += omega_error * dt;
+float pid_out = MAP_OMEGA_KP * omega_error
+              + MAP_OMEGA_KI * map_omega_integral;
+float pwm_cmd = MAP_FF_PWM + pid_out;   // FF at deadband
+raw_spin((int)constrain(pwm_cmd, 0, 255));</code></pre>
+
+      <p>
+        The feedforward (<code>MAP_FF_PWM = 155</code>) sits right at the deadband so the PID has authority in both directions; without it the integrator would have to wind all the way up to ~150 before the wheels even moved. A low-pass filter on the gyro feedback (alpha = 0.15) keeps the controller from following just noise.
+      </p>
+    </section>
+
+    <section>
+      <h2>Hybrid Spin–Settle–Read</h2>
+      <p>
+        My first continuous-spin runs produced really messy polar plots because the ToF sensor reports false outputs when the distance to the target changes significantly during a single integration window. The lab instuctions warn about this (I wanted to try anyway haha). To fix it I made the loop a small state machine: spin under PID for one segment (15°), stop, wait 200–300ms for inertia and the ToF to settle, then take a single stationary reading. Closed-loop control is preserved (PID still drives the rotation) but every reading is taken with the chassis fully still.
+      </p>
+
+      <pre><code>case MAP_TURNING: {
+    float seg_delta = yaw - map_yaw_at_segment_start;
+    if (fabs(seg_delta) >= MAP_SEGMENT_DEG) {
+        stop_motors();
+        map_state = MAP_SETTLING;
+        return;
+    }
+    // breakaway kick and then speed PID below
+}</code></pre>
+    </section>
+
+    <section>
+      <h2>Two Bugs Worth Mentioning</h2>
+
+      <h3>Gyro integration time mismatch</h3>
+      <p>
+        My initial mapping loop integrated yaw using <code>dt = (now - last_loop_time) / 1000</code>, but only added <code>gyro_z * dt</code> when <code>imu.dataReady()</code> returned true. Because the mapping loop runs much faster than the 100Hz IMU, <code>dt</code> ended up being the loop period (a few ms), not the time between IMU samples (~10ms), so yaw was being under-integrated by a factor of 5 to 10. The robot was physically rotating way past 360° before the algorithm even noticed, which compressed all the angle stamps, so I made it track a separate <code>map_last_imu_time</code> that only updates when fresh IMU data arrives, so the integration uses the actual sample interval.
+      </p>
+
+      <h3>Curving at the start of each segment</h3>
+      <p>
+        Static friction was uneven between the two motors, so at the start of each spin segment one wheel would break free a few ms before the other and the robot would briefly drive in a small arc before settling into in-place rotation. So, I added a brief breakaway kick (<code>MAP_BREAKAWAY_PWM = 250</code> for 80ms) at the start of every segment to slam both wheels free simultaneously, then drop into the speed PID for the rest of the segment. This didn't *always* work bit it did make it work like 95% of the time. Also the angle-tracking gyro is still running during the kick so it doesn't throw off the reading angle.
+      </p>
+    </section>
+
+    <section>
+      <h2>Transformation</h2>
+      <p>
+        Each scan gives me a list of (yaw, distance) pairs in the robot's local frame. To get world coordinates I rotate by the yaw and translate by the robot's known position. Since the ToF is mounted on the front of the robot pointing along its local +x axis and the offset from the center of rotation is small, the transform reduces to a 2D rotation followed by a translation:
+      </p>
+
+      <pre><code>def transform_scan(angles_deg, dists_mm, origin_mm):
+    # Robot was always physically facing west (-x) at scan start, towards the door
+    # so add 180° to convert local-frame yaw to world-frame angle.
+    theta = np.deg2rad(angles_deg + 180.0)
+    x0, y0 = origin_mm
+    xw = x0 + dists_mm * np.cos(theta)
+    yw = y0 + dists_mm * np.sin(theta)
+    return xw, yw</code></pre>
+
+      <p>
+        The +180° offset is a fixed correction for which way I happened to point the robot at the start of every scan (toward the west wall). I could have just redone it the better direction but I had gone home from lab. In matrix form this is:
+      </p>
+      <pre><code>[x_w]   [cos(θ+π)  -sin(θ+π)] [r]   [x_r]
+[y_w] = [sin(θ+π)   cos(θ+π)] [0] + [y_r]</code></pre>
+    </section>
+
+    <section>
+      <h2>Results</h2>
+
+      <div class="task">
+        <h3>Per-scan polar plots</h3>
+        <p>
+          Each individual scan looks *roughly* like the outline of the room from that vantage point. Due to my slightly unstable method of mounting the tof sensor, I have a feeling it tilted up and down a little. 
+        </p>
+
+        <div class="figure">
+          <img src="./lab9_polar_pos1_n3n2.png" alt="Polar scan pos1" />
+          <div class="caption">Polar scan from position 1. Shows the southwest corner of the room.</div>
+        </div>
+        <div class="figure">
+          <img src="./lab9_polar_pos2_53.png" alt="Polar scan pos2" />
+          <div class="caption">Polar scan from position 2. Shows the northeast corner of the room. Overall the most accuarate I think.</div>
+        </div>
+        <div class="figure">
+          <img src="./lab9_polar_pos3_03.png" alt="Polar scan pos3" />
+          <div class="caption">Polar scan from position 3. Shows the northwest corner of the room. Scatters quite widly at some points.</div>
+        </div>
+        <div class="figure">
+          <img src="./lab9_polar_pos4_5n3.png" alt="Polar scan pos4" />
+          <div class="caption">Polar scan from position 4. Shows the southeast corner of the room. Clustered very tightly around it for some reason. Sensor may have tilted down during scan.</div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Merged scatter and line map</h3>
+        <p>
+          After applying the transform and the +180° heading correction, all four scans land cleanly in the same world frame. The merged scatter clearly shows the L(ish)-shaped room geometry, the south-wall notch, and the central rectangular obstacle. I traced wall segments by hand on top of the scatter (the line list is saved as <code>lab9_line_starts.npy</code> and <code>lab9_line_ends.npy</code> for Lab 10).
+        </p>
+
+        <div class="figure">
+          <img src="./lab9_lshape_final.png" alt="Final L-shape map with merged scans" />
+          <div class="caption">Final line-based map overlaid on the merged ToF scans from all four positions. The L-shaped outline, south notch, and central obstacle are all supported by the data.</div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Expected accuracy in a 4×4m empty room</h3>
+        <p>
+          Because the hybrid approach reads while stationary, in-measurement rotation error is essentially eliminated. The remaining accuracy failure is dominated by probably the gyro drift between segments (~1–3°/sec on the ICM-20948 after bias calibration; over a ~14s scan that's roughly 15–40° of cumulative drift in the worst case) and ToF noise (~20mm). For a 4×4m empty square room scanned from the center, the worst-case diagonal range is ~2.8m, and a 1° angular error at that range projects to ~50mm of tangential displacement. This is comparable to the angular spacing between samples anyway.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Demonstration</h3>
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/TODO" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <p class="caption">Video: Robot doing a hybrid spin-settle-read scan on in the hallway, for example. I didn't realized I needed to take a video before I left, but this still works and shows off the protocol.</p>
+      </div>
+    </section>
+
+    <p>
+      Collaborations: Claude for state machine debugging, the gyro integration bug diagnosis, and the report HTML. Referenced past Lab 9 reports, and also 
+    </p>
+
+  </div>
+</body>
+</html>
