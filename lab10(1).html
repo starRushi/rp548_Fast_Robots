@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lab 10: Grid Localization using Bayes Filter</title>
+  <style>
+    :root{
+      --text:#111;
+      --muted:#555;
+      --rule:#d8d8d8;
+      --bg:#ffffff;
+      --codebg:#f6f6f6;
+      --link:#0b3d91;
+      --maxw: 860px;
+    }
+    html,body{ background:var(--bg); color:var(--text); }
+    body{
+      margin:0;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 2.0;
+      font-size: 18px;
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 48px 28px 72px; }
+    header{ border-bottom:1px solid var(--rule); padding-bottom: 18px; margin-bottom: 26px; }
+    .crumbs{ font-size: 16px; color: var(--muted); }
+    .crumbs a{ color: var(--link); text-decoration: none; }
+    .crumbs a:hover{ text-decoration: underline; }
+    h1{ font-size: 28px; margin: 6px 0 0; line-height: 1.4; }
+    .meta{ color: var(--muted); font-size: 16px; margin-top: 6px; }
+    h2{ font-size: 22px; margin: 34px 0 8px; }
+    h3{ font-size: 19px; margin: 26px 0 6px; }
+    p{ margin: 10px 0; }
+    ul{ margin: 10px 0 10px 26px; }
+    li{ margin: 6px 0; }
+    hr{ border:0; border-top:1px solid var(--rule); margin: 26px 0; }
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    pre{
+      background: var(--codebg);
+      border:1px solid var(--rule);
+      padding: 12px 14px;
+      overflow:auto;
+      margin: 12px 0;
+    }
+    .figure{
+      border:1px solid var(--rule);
+      padding: 10px;
+      background:#fff;
+      margin: 12px 0;
+    }
+    .figure img{
+      max-width:100%;
+      display:block;
+      margin: 0 auto;
+    }
+    .caption{
+      color: var(--muted);
+      font-size: 15px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .task{
+      border-top:1px solid var(--rule);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    .small{ font-size:16px; color:var(--muted); }
+    @media (max-width: 760px){
+      body{ font-size: 17px; }
+      .wrap{ padding: 36px 18px 60px; }
+    }
+    table{
+      border-collapse: collapse;
+      width: 100%;
+      margin: 12px 0;
+      font-size: 15px;
+    }
+    th, td{
+      border: 1px solid var(--rule);
+      padding: 6px 10px;
+      text-align: center;
+    }
+    th{ background: #f2f2f2; font-weight: 700; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="crumbs">
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 10</span>
+      </div>
+      <h1>Lab 10: Grid Localization using Bayes Filter</h1>
+      <div class="meta">
+        <span>Environment: Python Simulator (Flatland Box2D)</span> ·
+        <span>Grid: 12 × 9 × 18</span> ·
+        <span>Algorithm: Bayes Filter</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>
+        This lab is all about grid localization using a Bayes filter, done entirely in simulation. The robot's state space gets chopped into a 12×9×18 grid and the filter goes back and forth between a prediction step and an update step to figure out where the robot is.
+      </p>
+    </section>
+
+    <section>
+      <h2>Setup</h2>
+      <p>
+        Getting the simulator running on my Mac was annoying because Anaconda's Qt was fighting with PyQt6. I had to manually set the Qt plugin path at the top of the notebook before any imports; that fixed it.
+      </p>
+
+      <div class="figure">
+        <img src="./L10_Successful_Setup.png" alt="Plotter running" />
+        <div class="caption">Simulator and plotter running after the Qt fix.</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Preliminary Tests</h2>
+
+      <div class="task">
+        <h3>Execute Trajectory</h3>
+        <p>
+          Running the sample trajectory without the filter makes it obvious why we need this. Ground truth (green) stays inside the room but odometry (red) just drifts off into space.
+        </p>
+        <div class="figure">
+          <img src="./L10_Ex_Traj_Showcase.png" alt="Trajectory without filter" />
+          <div class="caption">Green = ground truth, Red = odometry. The drift is honestly impressive.</div>
+        </div>
+      </div>
+
+      <div class="task">
+        <h3>Get Observation Data</h3>
+        <p>
+          The robot does a full 360° rotation to collect 18 ToF readings for the sensor model.
+        </p>
+        <div class="figure">
+          <img src="./L10_Get_Data_Showcase.png" alt="Observation data collection" />
+          <div class="caption">Robot collecting 18 ToF readings during a full rotation.</div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <div class="task">
+        <h3>Compute Control & Odometry Motion Model</h3>
+        <p>
+          <code>compute_control</code> takes two poses and breaks the motion down into rot1, trans, and rot2. Then <code>odom_motion_model</code> checks how likely the actual observed control is given a hypothetical state transition; it treats each component as an independent Gaussian.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Prediction Step</h3>
+        <p>
+          This goes through every (prev_state, cur_state) pair and builds up the prior belief. The grid has 1944 cells so that's a lot of pairs; I skip any cell with belief below 0.0001 because otherwise each prediction step takes minutes.
+        </p>
+
+        <pre><code>for prev_i, prev_j, prev_k in all_prev_states:
+    if loc.bel[prev_i, prev_j, prev_k] < 0.0001:
+        continue   # skip negligible states
+    for cur_i, cur_j, cur_k in all_cur_states:
+        loc.bel_bar[cur_i, cur_j, cur_k] += (
+            odom_motion_model(cur_pose, prev_pose, u) * prior
+        )</code></pre>
+      </div>
+
+      <div class="task">
+        <h3>Update Step</h3>
+        <p>
+          My first version used <code>np.prod(likelihoods)</code> for the joint probability of all 18 beams, but multiplying 18 small Gaussian densities caused floating-point underflow. Every cell ended up at zero which was confusing. The fix was working in log space instead.
+        </p>
+
+        <pre><code># Log-space to avoid underflow
+log_p = np.sum(np.log(likelihoods + 1e-300)) + np.log(prior)
+# ... after all cells ...
+loc.bel = np.exp(log_bel - max_log)
+loc.bel /= np.sum(loc.bel)</code></pre>
+
+        <p>
+          Even after fixing the underflow the sensor model was completely overpowering the motion prior. The belief would just snap to whatever cell had the best sensor match regardless of motion history. Widening the sensor noise by 2× (<code>loc.sensor_sigma * 2</code>) softened things enough to let the prediction step actually matter.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Results</h2>
+      <p>
+        The filter ran for 16 trajectory steps. Blue dots are the most probable cell at each step; green is ground truth and red is odometry.
+      </p>
+
+      <div class="figure">
+        <img src="./L10_Run_With_Filter.png" alt="Bayes filter results" />
+        <div class="caption">Full trajectory with Bayes filter. Blue (belief) tracks green (ground truth) way better than red (odometry), especially on the right side of the room.</div>
+      </div>
+
+      <h3>When It Works</h3>
+      <p>
+        The filter does well when the robot is near walls or the central obstacle. Iterations 6 through 9 placed the belief at (1.524, 0.305) while ground truth ranged from (1.558, -0.207) to (1.357, 0.963); the x-error stayed under 20cm for most of those. This part of the room has enough geometry around it that the 18 ToF readings can actually distinguish it from other cells.
+      </p>
+
+      <h3>When It Doesn't</h3>
+      <p>
+        In the open middle of the room (iterations 0 through 5 and 10 through 15), the belief just snaps to (0, 0) regardless of where the robot is. The sensor readings from open space look the same from a bunch of different cells so the update step can't tell them apart, and the motion model spreads probability too thin to help.
+      </p>
+    </section>
+
+    <p>
+      Collaborations: Claude for filter implementation and the underflow fix. Referenced the Lab 10 spec and lecture notes for the motion model and sensor model math.
+    </p>
+
+  </div>
+</body>
+</html>
