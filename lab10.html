@@ -106,7 +106,7 @@
     <section>
       <h2>Overview</h2>
       <p>
-        This lab is all about grid localization using a Bayes filter, done entirely in simulation. The robot's state space gets chopped into a 12×9×18 grid and the filter goes back and forth between a prediction step and an update step to figure out where the robot is.
+        This lab is about grid localization using a Bayes filter, done entirely in simulation. The robot's state space gets chopped into a 12×9×18 grid and the filter goes back and forth between a prediction step and an update step to figure out where the robot is.
       </p>
     </section>
 
@@ -128,7 +128,7 @@
       <div class="task">
         <h3>Execute Trajectory</h3>
         <p>
-          Running the sample trajectory without the filter makes it obvious why we need this. Ground truth (green) stays inside the room but odometry (red) just drifts off into space.
+          Running the sample trajectory without the filter makes it obvious why we need this. Ground truth (green) stays inside the room but odometry (red) just drifts off into space. It's closer than the earlier example, but we didn't go very far.
         </p>
         <div class="figure">
           <img src="./L10_Ex_Traj_Showcase.png" alt="Trajectory without filter" />
@@ -194,7 +194,7 @@ loc.bel /= np.sum(loc.bel)</code></pre>
     <section>
       <h2>Results</h2>
       <p>
-        The filter ran for 16 trajectory steps. Blue dots are the most probable cell at each step; green is ground truth and red is odometry.
+        The filter ran for 16 trajectory steps. Blue dots are the most probable cell at each step; green is ground truth and red is odometry. Sometimes the blue dots don't all show up, not sure why.
       </p>
 
       <div class="figure">
