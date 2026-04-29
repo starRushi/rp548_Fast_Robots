@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Lab 11: Localization on the Real Robot</title>
+  <style>
+    :root{
+      --text:#111;
+      --muted:#555;
+      --rule:#d8d8d8;
+      --bg:#ffffff;
+      --codebg:#f6f6f6;
+      --link:#0b3d91;
+      --maxw: 860px;
+    }
+    html,body{ background:var(--bg); color:var(--text); }
+    body{
+      margin:0;
+      font-family: "Times New Roman", Times, serif;
+      line-height: 2.0;
+      font-size: 18px;
+    }
+    .wrap{ max-width: var(--maxw); margin: 0 auto; padding: 48px 28px 72px; }
+    header{ border-bottom:1px solid var(--rule); padding-bottom: 18px; margin-bottom: 26px; }
+    .crumbs{ font-size: 16px; color: var(--muted); }
+    .crumbs a{ color: var(--link); text-decoration: none; }
+    .crumbs a:hover{ text-decoration: underline; }
+    h1{ font-size: 28px; margin: 6px 0 0; line-height: 1.4; }
+    .meta{ color: var(--muted); font-size: 16px; margin-top: 6px; }
+    h2{ font-size: 22px; margin: 34px 0 8px; }
+    h3{ font-size: 19px; margin: 26px 0 6px; }
+    p{ margin: 10px 0; }
+    ul{ margin: 10px 0 10px 26px; }
+    li{ margin: 6px 0; }
+    hr{ border:0; border-top:1px solid var(--rule); margin: 26px 0; }
+    code, pre{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    pre{
+      background: var(--codebg);
+      border:1px solid var(--rule);
+      padding: 12px 14px;
+      overflow:auto;
+      margin: 12px 0;
+    }
+    .figure{
+      border:1px solid var(--rule);
+      padding: 10px;
+      background:#fff;
+      margin: 12px 0;
+    }
+    .figure img{
+      max-width:100%;
+      display:block;
+      margin: 0 auto;
+    }
+    .caption{
+      color: var(--muted);
+      font-size: 15px;
+      margin-top: 8px;
+      line-height: 1.6;
+    }
+    .task{
+      border-top:1px solid var(--rule);
+      padding-top: 18px;
+      margin-top: 18px;
+    }
+    @media (max-width: 760px){
+      body{ font-size: 17px; }
+      .wrap{ padding: 36px 18px 60px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <header>
+      <div class="crumbs">
+        <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 11</span>
+      </div>
+      <h1>Lab 11: Localization on the Real Robot</h1>
+      <div class="meta">
+        <span>Board: SparkFun RedBoard Artemis Nano</span> ·
+        <span>Sensors: VL53L1X ToF, ICM-20948 IMU</span> ·
+        <span>Algorithm: Bayes Filter (update step only)</span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Overview</h2>
+      <p>
+        This lab takes the Bayes filter from Lab 10 and runs it on the real robot. The big difference is that we only use the update step here, not the prediction step; the motion on these robots is too noisy for the odometry model to actually help. The robot does a 360 degree scan at each of the four marked positions and the filter uses those 18 ToF readings to estimate where it is.
+      </p>
+    </section>
+
+    <section>
+      <h2>Implementation</h2>
+
+      <h3>Observation Loop</h3>
+      <p>
+        The command perform_observation_loop sends the <code>START_MAPPING</code> command over BLE, waits for the robot to complete a full rotation collecting ToF readings at each stop, then pulls the data back with <code>SEND_MAP_DATA</code>. The scan uses the hybrid angular-speed-PID approach from Lab 9; the robot spins in short bursts under closed-loop speed control and reads the ToF while stationary between bursts.
+      </p>
+      <p>
+        One issue I ran into was that each spin segment was overshooting the target 20 degrees, so instead of getting 18 evenly spaced readings over 360 degrees the robot would finish its rotation in fewer steps. Then I would only get like 4-5 readings. I fixed this by changing the termination condition from angle-based (<code>map_total_rotation >= 360</code>) to count-based (<code>map_reading_count >= 18</code>), so it always collects exactly 18 readings regardless of overshoot. Since the readings end up unevenly spaced in angle, I interpolate them back to get the exact 0, 20, 40, ... 340 degree positions that the localization module expects.
+      </p>
+
+      <pre><code># Convert CW angles to CCW, then interpolate to 20-deg spacing
+angles_ccw = [-a for a in angles_raw]
+pairs = sorted(zip(angles_ccw, dists_raw))
+target_angles = [i * 20.0 for i in range(18)]
+distances_m = np.interp(target_angles,
+                        [a for a,d in pairs],
+                        [d for a,d in pairs]).tolist()</code></pre>
+    </section>
+
+    <section>
+      <h2>Task 1: Localization in Simulation</h2>
+      <p>
+        Running the provided <code>lab11_sim.ipynb</code> notebook with the optimized Bayes filter on the virtual robot. This confirms the filter works before introducing real-world noise.
+      </p>
+      <div class="figure">
+        <img src="./L11_Sim_Result.png" alt="Simulation localization result" />
+        <div class="caption">Simulation result showing ground truth (green), odometry (red), and belief (blue).</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Task 2: Localization on the Real Robot</h2>
+      <p>
+        I placed the robot at each of the four marked positions facing the same reference heading I used in Lab 9, ran a full observation loop, then ran the update step. The positions are tested in the same order as Lab 9 because I kept getting confused and already had the positions associated in my mind.
+      </p>
+
+      <div class="task">
+        <h3>Position 1: (-3 ft, -2 ft, 0 deg)</h3>
+        <div class="figure">
+          <img src="./L11_Pos1_n3n2.png" alt="Localization at position 1" />
+        </div>
+        <p>
+          GT: (-0.914m, -0.610m). Belief: (-0.610, -0.305). Medium error.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Position 2: (5 ft, 3 ft, 0 deg)</h3>
+        <div class="figure">
+          <img src="./L11_Pos2_53.png" alt="Localization at position 2" />
+        </div>
+        <p>
+          GT: (1.524m, 0.914m). Belief: (1.829, 0.305). Highest error.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Position 3: (0 ft, 3 ft, 0 deg)</h3>
+        <div class="figure">
+          <img src="./L11_Pos3_03.png" alt="Localization at position 3" />
+        </div>
+        <p>
+          GT: (0.000m, 0.914m). Belief: (0.305, 0.610). Medium error.
+        </p>
+      </div>
+
+      <div class="task">
+        <h3>Position 4: (5 ft, -3 ft, 0 deg)</h3>
+        <div class="figure">
+          <img src="./L11_Pos4_5n3.png" alt="Localization at position 4" />
+        </div>
+        <p>
+          GT: (1.524m, -0.914m). Belief: (1.524, -0.914). Almost no error!
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Inference</h2>
+      <p>
+        My inference on this is that essentially the positions with more information, you'd expect are more accurate. But suprisingly, I think because of how medocire my scans actually are, small errors got propgated strongly. Either that or it was drifting more when I did this scan. In theory though, the filter localizes better when the robot is surrounded by distinctive geometry close by, and struggles more in open areas or corners where the sensor readings could plausibly match multiple cells.
+      </p>
+    </section>
+
+    <p>
+      Collaborations: Claude for fighting my code and report HTML. Sorta reused Lab 9 mapping scan code for the real robot interface.
+      
+    </p>
+
+  </div>
+</body>
+</html>
