@@ -92,7 +92,7 @@
       <div class="crumbs">
         <a href="./index.html">Home</a> &nbsp;›&nbsp; <span>Lab 12</span>
       </div>
-      <h1>Lab 12: Inverted Pendulum</h1>
+      <h1>Lab 12: Inverted Pendulum (Wheelie)</h1>
       <div class="meta">
         <span>Board: SparkFun RedBoard Artemis Nano</span> ·
         <span>Sensors: ICM-20948 IMU</span> ·
@@ -122,7 +122,7 @@
 
       <h3>Pitch PID</h3>
       <p>
-        The balance controller is a PD controller on the integrated pitch angle. It lives in <code>runPitchPID()</code> in <code>pid.cpp</code> and runs as <code>pid_mode == 2</code>. Each loop iteration it reads the IMU, integrates <code>gyrY()</code> to get the current pitch angle, computes the error relative to the setpoint (0 degrees), and outputs a motor command.
+        The balance controller is a PID controller on the integrated pitch angle. It lives in <code>runPitchPID()</code> in <code>pid.cpp</code> and runs as <code>pid_mode == 2</code>. Each loop iteration it reads the IMU, integrates <code>gyrY()</code> to get the current pitch angle, computes the error relative to the setpoint (0 degrees), and outputs a motor command.
       </p>
 
       <pre><code>// Integrate gyro for pitch
@@ -159,7 +159,7 @@ if ((abs(error) <= 2.5) || (abs(error) >= 87.5)) {
       </p>
 
       <p>
-        We did not use an integral term at all. The balance point doesn't really drift on a flat surface so Ki just added unnecessary complexity for something this fine-grained that also doesn't last that long anyway. Keeping it at zero made tuning simpler since we only had two knobs to worry about.
+        We initially kept Ki at zero to simplify tuning, but found that adding a small integral term (Ki = 0.8) helped the controller correct for persistent lean. The I term has anti-windup clamping at ±300 so it doesn't blow up if the robot falls over.
       </p>
 
       <h3>Gain Tuning</h3>
@@ -167,7 +167,7 @@ if ((abs(error) <= 2.5) || (abs(error) >= 87.5)) {
         Gains are sent over BLE using <code>SET_PID_GAINS</code> so we could tune without reflashing. We did 20+ runs to find gains that worked. With low Kp values the robot just fell over on the first tilt; it couldn't react fast enough to catch itself. There was no oscillation at all with bad gains, just an immediate fall. We gradually increased Kp until the robot could actually push back against a tilt, then added Kd to damp the corrections and stop it from overreacting.
       </p>
       <p>
-        We ended up with two sets of gains depending on the surface. On carpet, Kp = 3, Ki = 0, Kd = 2 worked well since the extra friction from the carpet helped the wheels grip. On hardwood we needed much more aggressive gains: Kp = 8, Ki = 0, Kd = 3. I assume this is because the smoother surface meant the wheels slipped more easily, so the controller had to react harder and faster to the same tilt.
+        Our final gains on carpet were Kp = 12.25, Ki = 0.8, Kd = 0.75. The extra friction from the carpet helped the wheels grip which made tuning easier.
       </p>
       <p>
         We also lost a few runs to a bug where Clarence had the D term reading <code>gyrZ()</code> instead of <code>gyrY()</code> for the derivative. Since that's the wrong axis entirely, the D term was responding to rotation the controller didn't care about and ignoring the rotation it did. Once we caught that and switched to the correct axis the controller started actually damping the oscillations like it was supposed to.
@@ -180,7 +180,7 @@ if ((abs(error) <= 2.5) || (abs(error) >= 87.5)) {
         An inverted pendulum is inherently unstable. If the robot tilts by some angle θ from vertical, gravity exerts a torque proportional to sin(θ) that pulls it further away from upright. For small angles sin(θ) ≈ θ, so the linearized equation of motion looks like θ̈ = (g/L)θ - (1/L)u, where g is gravity, L is the effective pendulum length (roughly the distance from the wheel axle to the center of mass), and u is the corrective acceleration provided by the wheels. Without any control input the system diverges exponentially; the controller's job is to apply u fast enough to counteract the gravitational torque before θ gets too large.
       </p>
       <p>
-        Our PD controller computes the motor command as u = Kp·e + Kd·(de/dt), where e = (0 - θ) is the error between the setpoint and the current pitch. The proportional term Kp·e provides a restoring force that pushes the robot back toward vertical whenever it tilts. On its own this would cause the robot to oscillate around the setpoint since it has no way to anticipate when it's approaching zero and should start slowing down. The derivative term Kd·(de/dt) handles that by opposing the rate of change of the error; as the robot swings back toward upright the derivative term applies a braking force that prevents overshoot. Together these two terms act like a spring (P) and a damper (D).
+        Our PID controller computes the motor command as u = Kp·e + Ki·∫e + Kd·(de/dt), where e = (0 - θ) is the error between the setpoint and the current pitch. The proportional term Kp·e provides a restoring force that pushes the robot back toward vertical whenever it tilts. On its own this would cause the robot to oscillate around the setpoint since it has no way to anticipate when it's approaching zero and should start slowing down. The derivative term Kd·(de/dt) handles that by opposing the rate of change of the error; as the robot swings back toward upright the derivative term applies a braking force that prevents overshoot. The integral term accumulates error over time and corrects for persistent lean. Together these terms act like a spring (P), a damper (D), and a slow corrector (I).
       </p>
       <p>
         The reason we read the gyro rate directly for the D term instead of numerically differentiating the pitch angle is noise. Taking the discrete derivative of a signal amplifies high-frequency noise, so you'd need a low-pass filter on top of it. The gyro already gives us the angular rate as a clean analog measurement so we can skip that entirely and just use it directly. This is a standard trick in PID implementations on real hardware.
@@ -197,7 +197,7 @@ if ((abs(error) <= 2.5) || (abs(error) >= 87.5)) {
       </p>
 
       <pre><code># Set gains remotely
-KP, KI, KD = 3, 0, 2
+KP, KI, KD = 12.25, 0.8, 0.75
 ble.send_command(CMD.SET_PID_GAINS, f"{KP}|{KI}|{KD}")
 
 # Countdown then start
@@ -221,33 +221,44 @@ ble.send_command(CMD.BALANCE, "0")</code></pre>
     <section>
       <h2>Results</h2>
 
-      <h3>Video</h3>
+      <h3>Videos</h3>
       <div class="video-container">
-        <!-- TODO_VIDEO: replace with YouTube embed -->
-        <iframe src="TODO_VIDEO_URL" allowfullscreen></iframe>
+        <iframe src="https://www.youtube.com/embed/kW2kspywVE0" allowfullscreen></iframe>
+      </div>
+      <div class="video-container">
+        <iframe src="https://www.youtube.com/embed/ljcb7139238" allowfullscreen></iframe>
+      </div>
+      <div class="video-container">
+        <iframe src="https://www.youtube.com/embed/naVSANFXoSs" allowfullscreen></iframe>
       </div>
 
       <p>
-        Our best run kept the robot balanced for about [] seconds. It stayed upright with some visible twitching as the controller made small corrections back and forth. The controller was actually really good at holding position within about 10 degrees of upright; the corrections in that range were quick and consistent. But once it tilted past that band the recovery got much less reliable, and eventually the robot tipped too far to the left and couldn't come back. This was a consistent failure mode; when it fell it almost always went to the left, which suggests there might be a slight mechanical asymmetry in the chassis or wheel friction, or a small bias in the gyro that accumulated over time. Or maybe we just because we're all right hand dominant we held it tilted wrong at the beginning.
+        The robot stayed upright with some visible twitching as the controller made small corrections back and forth. The controller was actually really good at holding position within about 10 degrees of upright; the corrections in that range were quick and consistent. But once it tilted past that band the recovery got much less reliable, and eventually the robot tipped too far to the left and couldn't come back. This was a consistent failure mode; when it fell it almost always went to the left, which suggests there might be a slight mechanical asymmetry in the chassis or wheel friction, or a small bias in the gyro that accumulated over time. Or maybe just because we're all right hand dominant we held it tilted wrong at the beginning.
       </p>
 
-      <h3>Pitch Angle and Motor Output</h3>
+      <h3>Trial 1: Pitch and Motor Output</h3>
       <div class="figure">
-        <img src="./L12_balance_plot.png" alt="Pitch angle and motor command over time" />
-        <div class="caption">Top: pitch angle from integrated gyro. Bottom: motor PWM command. Gains: Kp=3, Ki=0, Kd=2.</div>
+        <img src="./L12_T1.png" alt="Trial 1 pitch and motor" />
+        <div class="caption">Trial 1: pitch angle and motor PWM over time. Gains: Kp=12.25, Ki=0.8, Kd=0.75.</div>
       </div>
 
-      <h3>Tracking Error</h3>
+      <h3>Trial 2: Pitch and Motor Output</h3>
       <div class="figure">
-        <img src="./L12_error_plot.png" alt="Tracking error over time" />
-        <div class="caption">Error relative to the 0 degree setpoint over the duration of the run.</div>
+        <img src="./L12_T2.png" alt="Trial 2 pitch and motor" />
+        <div class="caption">Trial 2: pitch angle and motor PWM over time.</div>
+      </div>
+
+      <h3>Trial 3: Pitch and Motor Output</h3>
+      <div class="figure">
+        <img src="./L12_T3.png" alt="Trial 3 pitch and motor" />
+        <div class="caption">Trial 3: pitch angle and motor PWM over time.</div>
       </div>
     </section>
 
     <section>
       <h2>Discussion</h2>
       <p>
-        [] seconds of balancing is far from perfect but it does demonstrate that the controller works. The main limitation is gyro drift; since we're integrating the gyro rate to get pitch, any bias accumulates over time and slowly shifts what the controller thinks "upright" is. A complementary filter combining the gyro with accelerometer data could help, though we didn't have time to implement one.
+        The balancing is far from perfect but it does demonstrate that the controller works. The main limitation is gyro drift; since we're integrating the gyro rate to get pitch, any bias accumulates over time and slowly shifts what the controller thinks "upright" is. A complementary filter combining the gyro with accelerometer data could help, though we didn't have time to implement one.
       </p>
     </section>
 
@@ -258,3 +269,4 @@ ble.send_command(CMD.BALANCE, "0")</code></pre>
   </div>
 </body>
 </html>
+
